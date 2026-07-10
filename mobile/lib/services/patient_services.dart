@@ -285,6 +285,7 @@ class PatientService {
     required String emailConfirm,
     required String telephone,
     String adresse = '',
+    String typeConsultation = 'presentiel',
   }) async {
     final response = await _api.post('/patient/rendez-vous/', {
       'medecin_id': medecinId,
@@ -295,6 +296,7 @@ class PatientService {
       'email_confirm': emailConfirm.trim(),
       'telephone': telephone.trim(),
       'adresse': adresse.trim(),
+      'type_consultation': typeConsultation,
     });
     return RendezVousPatient.fromJson(_api.decodeMap(response));
   }

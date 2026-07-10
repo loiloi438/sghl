@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../core/api_config.dart';
 import '../core/api_errors.dart';
 import '../core/sghl_theme.dart';
 import '../models/patient_models.dart';
@@ -28,6 +30,7 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
 
   int? _medecinId;
   DateTime? _dateHeure;
+  String _typeConsultation = 'presentiel';
   final _motifController = TextEditingController();
   final _emailController = TextEditingController();
   final _emailConfirmController = TextEditingController();
@@ -141,6 +144,7 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
     }
 
     setState(() => _saving = true);
+    final isTeleconsultation = _typeConsultation == 'teleconsultation';
     try {
       await context.read<PatientService>().creerRendezVous(
         medecinId: _medecinId!,
@@ -150,17 +154,21 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
         emailConfirm: emailConfirm,
         telephone: telephone,
         adresse: _adresseController.text.trim(),
+        typeConsultation: _typeConsultation,
       );
       if (!mounted) return;
       _motifController.clear();
       setState(() {
         _medecinId = null;
         _dateHeure = null;
+        _typeConsultation = 'presentiel';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Demande enregistrée — e-mail de confirmation si adresse renseignée.',
+            isTeleconsultation
+                ? 'Téléconsultation planifiée — lien visio disponible dans la liste.'
+                : 'Demande enregistrée — e-mail de confirmation si adresse renseignée.',
           ),
         ),
       );
@@ -213,6 +221,25 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
+    }
+  }
+
+  Future<void> _openVisio(RendezVousPatient rdv) async {
+    if (!rdv.hasVisioLink) return;
+    final url = ApiConfig.resolvePublicWebUrl(rdv.lienVisio!.trim());
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien visio invalide.')),
+      );
+      return;
+    }
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir la salle visio.')),
+      );
     }
   }
 
@@ -339,6 +366,23 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                                                         ),
                                                   ),
                                                 ),
+                                                if (rdv.isTeleconsultation)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                      right: 6,
+                                                    ),
+                                                    child: Chip(
+                                                      label: const Text('Visio'),
+                                                      visualDensity:
+                                                          VisualDensity.compact,
+                                                      backgroundColor: SghlColors
+                                                          .medicalBlue
+                                                          .withValues(
+                                                        alpha: 0.12,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 Chip(
                                                   label: Text(rdv.statutLabel),
                                                 ),
@@ -348,6 +392,26 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                                             Text(_formatDate(rdv.dateHeure)),
                                             const SizedBox(height: 4),
                                             Text(rdv.motif),
+                                            if (rdv.hasVisioLink &&
+                                                rdv.peutAnnuler) ...[
+                                              const SizedBox(height: 10),
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerLeft,
+                                                child: FilledButton.tonalIcon(
+                                                  onPressed: () =>
+                                                      _openVisio(rdv),
+                                                  icon: const Icon(
+                                                    Icons
+                                                        .videocam_rounded,
+                                                    size: 18,
+                                                  ),
+                                                  label: const Text(
+                                                    'Rejoindre la visio',
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                             if (rdv.peutAnnuler) ...[
                                               const SizedBox(height: 8),
                                               Align(
@@ -505,6 +569,26 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                           ? 'Choisir date et heure *'
                           : _formatDate(_dateHeure!.toIso8601String()),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _typeConsultation,
+                    decoration: const InputDecoration(
+                      labelText: 'Type de consultation',
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'presentiel',
+                        child: Text('Présentiel'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'teleconsultation',
+                        child: Text('Téléconsultation (visio)'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => _typeConsultation = v);
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextField(

@@ -20,4 +20,15 @@ class ApiConfig {
     // Windows desktop, iOS simulateur, etc.
     return 'http://127.0.0.1:8000/api/v1';
   }
+
+  /// Réécrit les liens web (visio) pour l'émulateur Android.
+  static String resolvePublicWebUrl(String url) {
+    if (url.isEmpty) return url;
+    if (!kIsWeb && Platform.isAndroid) {
+      return url
+          .replaceFirst('http://localhost:', 'http://10.0.2.2:')
+          .replaceFirst('http://127.0.0.1:', 'http://10.0.2.2:');
+    }
+    return url;
+  }
 }

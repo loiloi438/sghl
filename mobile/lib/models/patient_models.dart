@@ -389,6 +389,8 @@ class RendezVousPatient {
     required this.motif,
     required this.statut,
     required this.version,
+    this.typeConsultation = 'presentiel',
+    this.lienVisio,
   });
 
   factory RendezVousPatient.fromJson(Map<String, dynamic> json) {
@@ -400,6 +402,8 @@ class RendezVousPatient {
       motif: json['motif'] as String? ?? '',
       statut: json['statut'] as String? ?? '',
       version: (json['version'] as num?)?.toInt() ?? 0,
+      typeConsultation: json['type_consultation'] as String? ?? 'presentiel',
+      lienVisio: json['lien_visio'] as String?,
     );
   }
 
@@ -410,6 +414,13 @@ class RendezVousPatient {
   final String motif;
   final String statut;
   final int version;
+  final String typeConsultation;
+  final String? lienVisio;
+
+  bool get isTeleconsultation => typeConsultation == 'teleconsultation';
+
+  bool get hasVisioLink =>
+      lienVisio != null && lienVisio!.trim().isNotEmpty;
 
   bool get peutAnnuler => statut == 'planifie' || statut == 'confirme';
 
