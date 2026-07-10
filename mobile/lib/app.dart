@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'core/sghl_page_route.dart';
 import 'core/sghl_theme.dart';
 import 'core/theme_notifier.dart';
 import 'services/patient_services.dart';
@@ -25,6 +26,14 @@ import 'screens/validate_account_screen.dart';
 class SghlApp extends StatelessWidget {
   const SghlApp({super.key});
 
+  static const _instantRoutes = {
+    LoginScreen.route,
+    RegisterScreen.route,
+    ValidateAccountScreen.route,
+    PatientShell.route,
+    StaffHomeScreen.route,
+  };
+
   @override
   Widget build(BuildContext context) {
     final themeNotifier = context.watch<ThemeNotifier>();
@@ -43,28 +52,41 @@ class SghlApp extends StatelessWidget {
       darkTheme: SghlTheme.dark(),
       themeMode: themeNotifier.mode,
       home: const _RootScreen(),
-      routes: {
-        LoginScreen.route: (_) => const LoginScreen(),
-        RegisterScreen.route: (_) => const RegisterScreen(),
-        ValidateAccountScreen.route: (ctx) {
-          final username = ModalRoute.of(ctx)?.settings.arguments as String? ?? '';
-          return ValidateAccountScreen(initialUsername: username);
-        },
-        PatientShell.route: (_) => const PatientShell(),
-        HomeScreen.route: (_) => const HomeScreen(),
-        ConstantesScreen.route: (_) => const ConstantesScreen(),
-        PlansScreen.route: (_) => const PlansScreen(),
-        DosesScreen.route: (_) => const DosesScreen(),
-        PrescriptionsScreen.route: (_) => const PrescriptionsScreen(),
-        LaboratoireScreen.route: (_) => const LaboratoireScreen(),
-        FacturesScreen.route: (_) => const FacturesScreen(),
-        RendezVousScreen.route: (_) => const RendezVousScreen(),
-        NotificationsScreen.route: (_) => const NotificationsScreen(),
-        ProfilScreen.route: (_) => const ProfilScreen(),
-        StaffHomeScreen.route: (_) => const StaffHomeScreen(),
-        StaffRendezVousScreen.route: (_) => const StaffRendezVousScreen(),
-      },
+      onGenerateRoute: _onGenerateRoute,
     );
+  }
+
+  static Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    final Widget page = switch (settings.name) {
+      LoginScreen.route => const LoginScreen(),
+      RegisterScreen.route => const RegisterScreen(),
+      ValidateAccountScreen.route => ValidateAccountScreen(
+          initialUsername: settings.arguments as String? ?? '',
+        ),
+      PatientShell.route => const PatientShell(),
+      HomeScreen.route => const HomeScreen(),
+      ConstantesScreen.route => const ConstantesScreen(),
+      PlansScreen.route => const PlansScreen(),
+      DosesScreen.route => const DosesScreen(),
+      PrescriptionsScreen.route => const PrescriptionsScreen(),
+      LaboratoireScreen.route => const LaboratoireScreen(),
+      FacturesScreen.route => const FacturesScreen(),
+      RendezVousScreen.route => const RendezVousScreen(),
+      NotificationsScreen.route => const NotificationsScreen(),
+      ProfilScreen.route => const ProfilScreen(),
+      StaffHomeScreen.route => const StaffHomeScreen(),
+      StaffRendezVousScreen.route => const StaffRendezVousScreen(),
+      _ => throw Exception('Route inconnue: ${settings.name}'),
+    };
+
+    if (_instantRoutes.contains(settings.name)) {
+      return MaterialPageRoute<void>(
+        builder: (_) => page,
+        settings: settings,
+      );
+    }
+
+    return SghlSlideUpRoute<void>(page: page, settings: settings);
   }
 }
 

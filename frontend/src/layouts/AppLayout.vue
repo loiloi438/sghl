@@ -26,13 +26,13 @@
       <SidebarNav :navigation="navigation" @navigate="menuOpen = false" />
 
       <div class="sidebar-footer">
-        <div class="user-card">
+        <RouterLink to="/profil" class="user-card user-card--link" @click="menuOpen = false">
           <div class="user-avatar">{{ initials }}</div>
           <div>
             <strong>{{ auth.fullName }}</strong>
             <span class="role">{{ roleLabel }}</span>
           </div>
-        </div>
+        </RouterLink>
         <button class="btn btn-ghost logout" type="button" @click="logout">Déconnexion</button>
       </div>
     </aside>
@@ -66,11 +66,11 @@
 
 <script setup>
 import { computed, ref, Transition, watch } from 'vue'
-import { RouterView, useRoute, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import SidebarNav from '../components/SidebarNav.vue'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import { useNavigation } from '../composables/useNavigation.js'
-import { PLACEHOLDER_MODULES } from '../config/placeholderModules.js'
+import { isPlaceholderRoute as isRegisteredPlaceholder } from '../config/navigation.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
@@ -91,7 +91,7 @@ const roleLabels = {
 const roleLabel = computed(() => roleLabels[auth.role] || auth.role)
 const pageTitle = computed(() => route.meta.title || 'Tableau de bord')
 const isPlaceholderRoute = computed(
-  () => route.meta.placeholder || route.name in PLACEHOLDER_MODULES,
+  () => route.meta.placeholder || isRegisteredPlaceholder(route.name),
 )
 const initials = computed(() => {
   const name = auth.fullName || auth.user?.username || 'U'
@@ -212,6 +212,19 @@ async function logout() {
   align-items: center;
   gap: 0.65rem;
   margin-bottom: 0.75rem;
+}
+
+.user-card--link {
+  text-decoration: none;
+  color: inherit;
+  border-radius: 0.75rem;
+  padding: 0.35rem;
+  margin: -0.35rem -0.35rem 0.4rem;
+  transition: background 0.15s ease;
+}
+
+.user-card--link:hover {
+  background: var(--color-surface-muted, rgba(148, 163, 184, 0.12));
 }
 
 .user-avatar {

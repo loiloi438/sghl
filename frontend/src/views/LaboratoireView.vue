@@ -48,7 +48,7 @@
           <div class="flex flex-wrap gap-2">
             <button v-if="selectedCommande.statut === 'commandee' && canPrelever" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click="prelever">Enregistrer prélèvement</button>
             <button v-if="selectedCommande.statut === 'prelevee' && auth.canLabo" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click="affecter">Affecter au biologiste</button>
-            <button v-if="['affectee', 'resultats_saisis'].includes(selectedCommande.statut) && auth.canLabo" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click="saisirResultats">Saisir résultats</button>
+            <button v-if="['affectee', 'resultats_saisis'].includes(selectedCommande.statut) && auth.canLabo" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click="openResultatsDialog">Saisir résultats</button>
             <button v-if="selectedCommande.statut === 'resultats_saisis' && auth.canLabo" class="rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700" @click="valider">Valider (biologiste)</button>
             <button v-if="selectedCommande.statut === 'validee' && auth.canLabo" class="rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700" @click="publier">Publier au patient</button>
             <button v-if="selectedCommande.statut === 'publiee'" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click="telechargerPdf">PDF signé</button>
@@ -98,11 +98,21 @@
       </div>
     </div>
   </div>
+
+  <LabResultatsDialog
+    :open="resultatsDialogOpen"
+    :lignes="selectedCommande?.lignes || []"
+    :loading="savingResultats"
+    @confirm="submitResultats"
+    @cancel="resultatsDialogOpen = false"
+  />
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import LabResultatsDialog from '../components/LabResultatsDialog.vue'
 import api, { downloadPdf, getErrorMessage, unwrapList } from '../api/client.js'
+import { showToast } from '../composables/useToast.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
@@ -113,6 +123,8 @@ const selectedHospId = ref('')
 const selectedCommande = ref(null)
 const error = ref('')
 const message = ref('')
+const resultatsDialogOpen = ref(false)
+const savingResultats = ref(false)
 
 const form = reactive({ codes_analyses: [], observations: '' })
 
@@ -218,25 +230,28 @@ async function affecter() {
   }
 }
 
-async function saisirResultats() {
-  const resultats = selectedCommande.value.lignes.map((l) => {
-    const valeur = prompt(`${l.code_analyse} — ${l.libelle}\nSaisir la valeur :`, l.resultat?.valeur || '')
-    if (valeur === null) return null
-    return { ligne_id: l.id, valeur, unite: l.unite_reference || '' }
-  }).filter(Boolean)
+function openResultatsDialog() {
+  if (!selectedCommande.value?.lignes?.length) return
+  resultatsDialogOpen.value = true
+}
 
-  if (resultats.length !== selectedCommande.value.lignes.length) return
-
+async function submitResultats(resultats) {
+  if (!selectedCommande.value) return
   error.value = ''
+  savingResultats.value = true
   try {
     const { data } = await api.post(`/commandes-analyses/${selectedCommande.value.id}/resultats/`, {
       resultats,
     })
     selectedCommande.value = data
+    resultatsDialogOpen.value = false
     message.value = 'Résultats enregistrés.'
+    showToast('Résultats enregistrés.', 'success')
     await loadCommandes()
   } catch (e) {
     error.value = getErrorMessage(e)
+  } finally {
+    savingResultats.value = false
   }
 }
 

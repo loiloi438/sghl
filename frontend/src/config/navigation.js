@@ -37,6 +37,13 @@ export const NAV_SECTIONS = [
         icon: 'dashboard',
         roles: STAFF_ROLES,
       },
+      {
+        to: '/profil',
+        name: 'profil',
+        label: 'Mon compte',
+        icon: 'patients',
+        roles: STAFF_ROLES,
+      },
     ],
   },
   {
@@ -171,4 +178,20 @@ export function modulesByCategory(role) {
   return Object.entries(map)
     .filter(([, modules]) => modules.length)
     .map(([id, modules]) => ({ id, label: CATEGORY_LABELS[id], modules }))
+}
+
+/** Registre des modules « Bientôt disponible » (clé = name de route). */
+export const PLACEHOLDER_MODULES = {}
+
+export function getPlaceholderModule(routeName) {
+  return PLACEHOLDER_MODULES[routeName] || {
+    title: 'Module',
+    subtitle: 'Fonctionnalité à venir',
+    icon: 'dashboard',
+    features: ['Interface en cours de conception'],
+  }
+}
+
+export function isPlaceholderRoute(routeName) {
+  return routeName in PLACEHOLDER_MODULES
 }

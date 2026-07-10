@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/api_errors.dart';
 import '../services/patient_services.dart';
+import '../widgets/sghl_design_system.dart';
 import 'login_screen.dart';
 
 class ValidateAccountScreen extends StatefulWidget {
@@ -85,71 +86,84 @@ class _ValidateAccountScreenState extends State<ValidateAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Validation du compte')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Un code de validation a été envoyé par e-mail. Saisissez-le pour activer votre compte.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            if (_message != null)
-              _Banner(text: _message!, success: true),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              _Banner(text: _error!, success: false),
-            ],
-            const SizedBox(height: 16),
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(labelText: 'Identifiant'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _codeController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              decoration: const InputDecoration(
-                labelText: 'Code de validation',
-                counterText: '',
+      appBar: AppBar(
+        title: const Text('Validation du compte'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      extendBodyBehindAppBar: true,
+      body: SghlLoginBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SghlCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Activez votre compte',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Un code de validation a été envoyé par e-mail. Saisissez-le pour activer votre compte.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_message != null)
+                    SghlFeedbackBanner(
+                      message: _message!,
+                      type: SghlFeedbackType.success,
+                    ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    SghlFeedbackBanner(
+                      message: _error!,
+                      type: SghlFeedbackType.error,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Identifiant',
+                      prefixIcon: Icon(Icons.person_outline_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _codeController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    decoration: const InputDecoration(
+                      labelText: 'Code de validation',
+                      counterText: '',
+                      prefixIcon: Icon(Icons.pin_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SghlCoralButton(
+                    label: _loading ? 'Validation…' : 'Valider',
+                    loading: _loading,
+                    onPressed: _validate,
+                  ),
+                  TextButton(
+                    onPressed: _resendLoading ? null : _resend,
+                    child: Text(
+                      _resendLoading ? 'Envoi…' : 'Renvoyer le code',
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: _loading ? null : _validate,
-              child: Text(_loading ? 'Validation…' : 'Valider'),
-            ),
-            TextButton(
-              onPressed: _resendLoading ? null : _resend,
-              child: Text(_resendLoading ? 'Envoi…' : 'Renvoyer le code'),
-            ),
-          ],
+          ),
         ),
       ),
-    );
-  }
-}
-
-class _Banner extends StatelessWidget {
-  const _Banner({required this.text, required this.success});
-
-  final String text;
-  final bool success;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: success
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(text),
     );
   }
 }

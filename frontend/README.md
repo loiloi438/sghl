@@ -48,6 +48,7 @@ Routes principales :
 
 - `/patient` — tableau de bord (hospitalisation, doses, constantes)
 - `/patient/rendez-vous` — prise de RDV (présentiel ou téléconsultation avec lien visio)
+- `/visio/:token` — salle de téléconsultation (lien sécurisé, Jitsi embarqué, route publique)
 - `/patient/soins` — constantes vitales et plan de soins
 - `/patient/prescriptions` — ordonnances validées
 - `/patient/laboratoire` — résultats d'analyses
@@ -85,8 +86,29 @@ Variables utiles (`.env.production`) :
 
 ## Tests E2E (Playwright)
 
+Prérequis : backend Python (venv à la racine du repo) et navigateurs Playwright.
+
 ```powershell
+cd frontend
+npm run test:e2e:install   # une seule fois
 npm run test:e2e
 ```
 
-Le scénario staff `e2e/login.spec.js` couvre la connexion médecin → tableau de bord.
+Au démarrage, Playwright :
+
+1. Exécute `migrate` + `seed_admin` + `seed_demo` (base `e2e-test.sqlite3`)
+2. Lance Django (`8010`) avec e-mails en mémoire (`locmem`) pour le MFA staff
+3. Lance Vite (`5174`) avec proxy API vers `8010`
+
+Scénarios :
+
+| Fichier | Parcours |
+|---------|----------|
+| `e2e/login.spec.js` | Médecin + MFA e-mail → module Rendez-vous |
+| `e2e/patient-portal.spec.js` | Patient → Mon espace → Mes rendez-vous |
+| `e2e/patient-detail.spec.js` | Staff → liste Patients → fiche dossier |
+| `e2e/visio.spec.js` | Lien `/visio/:token` (public, Jitsi) + module Téléconsultation staff |
+
+Comptes utilisés : `medecin` / `Medecin@SGHL2026`, `patient` / `Patient@SGHL2026`.
+
+> En local, si un serveur Django tourne déjà sans `EMAIL_BACKEND=locmem`, les tests MFA échoueront — arrêtez-le ou lancez avec `CI=true npm run test:e2e`.

@@ -116,10 +116,12 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import api, { downloadPdf, getErrorMessage, unwrapList } from '../api/client.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
+const route = useRoute()
 const hospitalisations = ref([])
 const diagnostics = ref([])
 const prescriptions = ref([])
@@ -154,7 +156,11 @@ async function loadBase() {
   ])
   hospitalisations.value = unwrapList(hospRes.data)
   diagnostics.value = unwrapList(cimRes.data)
-  if (hospitalisations.value.length && !selectedHospId.value) {
+  const queryHospId = route.query.hospitalisation_id
+  if (queryHospId && hospitalisations.value.some((h) => h.id === queryHospId)) {
+    selectedHospId.value = String(queryHospId)
+    await loadPrescriptions()
+  } else if (hospitalisations.value.length && !selectedHospId.value) {
     selectedHospId.value = hospitalisations.value[0].id
     await loadPrescriptions()
   }

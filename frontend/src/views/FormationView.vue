@@ -316,7 +316,7 @@
                   <td class="px-4 py-4 text-slate-700">{{ formatDateTime(garde.date_fin) }}</td>
                   <td class="px-4 py-4 text-slate-700">{{ garde.service_nom || '—' }}</td>
                   <td class="px-4 py-4">
-                    <button class="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100" @click="deleteGarde(garde)">Supprimer</button>
+                    <button class="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100" @click="requestDeleteGarde(garde)">Supprimer</button>
                   </td>
                 </tr>
               </tbody>
@@ -339,11 +339,24 @@
       </div>
     </div>
   </div>
+
+  <ConfirmDialog
+    :open="confirmDeleteGarde.open"
+    title="Supprimer la garde"
+    :message="confirmDeleteGarde.message"
+    confirm-label="Supprimer"
+    :danger="true"
+    :loading="deletingGarde"
+    @confirm="confirmDeleteGardeAction"
+    @cancel="confirmDeleteGarde.open = false"
+  />
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
+import { showToast } from '../composables/useToast.js'
 
 const tabs = [
   { id: 'formations', label: 'Formations' },
@@ -356,6 +369,8 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
 const message = ref('')
+const confirmDeleteGarde = ref({ open: false, message: '', garde: null })
+const deletingGarde = ref(false)
 const activeTab = ref('formations')
 
 const stats = ref({
@@ -705,16 +720,30 @@ async function createGarde() {
   }
 }
 
-async function deleteGarde(garde) {
-  if (!confirm(`Supprimer la garde de ${garde.personnel_nom} ?`)) return
+function requestDeleteGarde(garde) {
+  confirmDeleteGarde.value = {
+    open: true,
+    message: `Supprimer la garde de ${garde.personnel_nom} ? Cette action est irréversible.`,
+    garde,
+  }
+}
+
+async function confirmDeleteGardeAction() {
+  const garde = confirmDeleteGarde.value.garde
+  if (!garde) return
+  deletingGarde.value = true
   try {
     await api.delete(`/rh/gardes/${garde.id}/?version=${garde.version}`)
+    confirmDeleteGarde.value.open = false
     message.value = 'Garde supprimée.'
+    showToast('Garde supprimée.', 'success')
     await loadGardes()
     await loadWeekDays()
     await loadStats()
   } catch (e) {
     error.value = getErrorMessage(e)
+  } finally {
+    deletingGarde.value = false
   }
 }
 

@@ -97,7 +97,7 @@
                 <td class="px-4 py-4">
                   <div class="flex flex-wrap gap-2">
                     <button class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50" @click="editConvention(convention)">Éditer</button>
-                    <button class="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700" @click="deleteConvention(convention)">Supprimer</button>
+                    <button class="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700" @click="requestDeleteConvention(convention)">Supprimer</button>
                   </div>
                 </td>
               </tr>
@@ -138,7 +138,7 @@
                   <td class="px-4 py-4">
                     <div class="flex flex-wrap gap-2">
                       <button class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" @click="editAffiliation(aff)">Éditer</button>
-                      <button class="rounded-2xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700" @click="deleteAffiliation(aff)">Supprimer</button>
+                      <button class="rounded-2xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700" @click="requestDeleteAffiliation(aff)">Supprimer</button>
                     </div>
                   </td>
                 </tr>
@@ -193,11 +193,24 @@
       </div>
     </div>
   </div>
+
+  <ConfirmDialog
+    :open="confirmDelete.open"
+    title="Confirmer la suppression"
+    :message="confirmDelete.message"
+    confirm-label="Supprimer"
+    :danger="true"
+    :loading="deleting"
+    @confirm="confirmDeletion"
+    @cancel="confirmDelete.open = false"
+  />
 </template>
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
+import { showToast } from '../composables/useToast.js'
 
 const mainTabs = [
   { id: 'conventions', label: 'Conventions' },
@@ -214,6 +227,8 @@ const affiliationsLoading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const message = ref('')
+const confirmDelete = ref({ open: false, message: '', type: null, item: null })
+const deleting = ref(false)
 const search = ref('')
 const statusFilter = ref('')
 const showForm = ref(false)
@@ -331,15 +346,47 @@ async function saveConvention() {
   }
 }
 
-async function deleteConvention(convention) {
-  if (!confirm(`Supprimer la convention ${convention.assurance} ?`)) return
+function requestDeleteConvention(convention) {
+  confirmDelete.value = {
+    open: true,
+    message: `Supprimer la convention ${convention.assurance} ? Cette action est irréversible.`,
+    type: 'convention',
+    item: convention,
+  }
+}
+
+function requestDeleteAffiliation(aff) {
+  confirmDelete.value = {
+    open: true,
+    message: `Supprimer l'affiliation de ${aff.patient_nom} ? Cette action est irréversible.`,
+    type: 'affiliation',
+    item: aff,
+  }
+}
+
+async function confirmDeletion() {
+  const { type, item } = confirmDelete.value
+  if (!item) return
   error.value = ''
+  deleting.value = true
   try {
-    await api.delete(`/assurance/organismes/${convention.id}/`)
-    message.value = 'Convention supprimée.'
-    await loadAll()
+    if (type === 'convention') {
+      await api.delete(`/assurance/organismes/${item.id}/`)
+      message.value = 'Convention supprimée.'
+      showToast('Convention supprimée.', 'success')
+      await loadAll()
+    } else if (type === 'affiliation') {
+      await api.delete(`/assurance/affiliations/${item.id}/`)
+      message.value = 'Affiliation supprimée.'
+      showToast('Affiliation supprimée.', 'success')
+      await loadAffiliations()
+      await loadStats()
+    }
+    confirmDelete.value.open = false
   } catch (e) {
     error.value = getErrorMessage(e)
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -396,19 +443,6 @@ async function saveAffiliation() {
     error.value = getErrorMessage(e)
   } finally {
     saving.value = false
-  }
-}
-
-async function deleteAffiliation(aff) {
-  if (!confirm(`Supprimer l'affiliation de ${aff.patient_nom} ?`)) return
-  error.value = ''
-  try {
-    await api.delete(`/assurance/affiliations/${aff.id}/`)
-    message.value = 'Affiliation supprimée.'
-    await loadAffiliations()
-    await loadStats()
-  } catch (e) {
-    error.value = getErrorMessage(e)
   }
 }
 

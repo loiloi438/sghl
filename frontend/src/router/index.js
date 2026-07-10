@@ -27,6 +27,7 @@ import {
   URGENCES,
 } from '../permissions.js'
 import { useAuthStore } from '../stores/auth.js'
+import { showAccessDenied } from '../composables/useToast.js'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -48,6 +49,12 @@ const router = createRouter({
       name: 'contact',
       component: () => import('../views/LocalisationView.vue'),
       meta: { public: true, title: 'Contact & Localisation' },
+    },
+    {
+      path: '/visio/:token',
+      name: 'visio',
+      component: () => import('../views/VisioView.vue'),
+      meta: { public: true, title: 'Téléconsultation' },
     },
     {
       path: '/patient',
@@ -116,10 +123,27 @@ const router = createRouter({
           meta: { title: 'Tableau de bord', roles: STAFF_ROLES },
         },
         {
+          path: 'profil',
+          name: 'profil',
+          component: () => import('../views/ProfilView.vue'),
+          meta: {
+            title: 'Mon compte',
+            subtitle: 'Profil et authentification MFA',
+            icon: 'patients',
+            roles: STAFF_ROLES,
+          },
+        },
+        {
           path: 'patients',
           name: 'patients',
           component: () => import('../views/PatientsView.vue'),
           meta: { title: 'Patients', roles: PATIENTS_READ },
+        },
+        {
+          path: 'patients/:id',
+          name: 'patient-detail',
+          component: () => import('../views/PatientDetailView.vue'),
+          meta: { title: 'Fiche patient', roles: PATIENTS_READ },
         },
         {
           path: 'rendez-vous',
@@ -334,15 +358,18 @@ router.beforeEach(async (to) => {
   }
 
   if (auth.isPatient && to.meta.staffOnly) {
+    showAccessDenied('Accès refusé. Cette section est réservée au personnel.')
     return { name: 'patient-home' }
   }
 
   if (auth.isStaff && to.meta.patientOnly) {
-    return { name: 'dashboard' }
+    showAccessDenied('Accès refusé. Cette section est réservée aux patients.')
+    return { name: auth.homeRoute }
   }
 
   if (to.meta.roles && auth.user && !to.meta.roles.includes(auth.user.role)) {
-    return auth.isPatient ? { name: 'patient-home' } : { name: 'dashboard' }
+    showAccessDenied()
+    return { name: auth.homeRoute }
   }
 
   return true

@@ -14,7 +14,7 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-only-change-in-production')
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('1', 'true', 'yes')
-ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,10.0.2.2').split(',') if h.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -90,10 +90,11 @@ if DB_ENGINE == 'postgresql':
         }
     }
 else:
+    _sqlite_name = os.getenv('SQLITE_NAME', 'db.sqlite3')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': BASE_DIR / _sqlite_name,
         }
     }
 
@@ -116,6 +117,10 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 SGHL_ETABLISSEMENT = os.getenv('SGHL_ETABLISSEMENT', 'SGHL — Centre Hospitalier')
 SGHL_FRONTEND_URL = os.getenv('SGHL_FRONTEND_URL', 'http://localhost:5173')
+SGHL_JITSI_DOMAIN = os.getenv('SGHL_JITSI_DOMAIN', 'meet.jit.si')
+SGHL_JITSI_ROOM_PREFIX = os.getenv('SGHL_JITSI_ROOM_PREFIX', 'sghl-visio')
+SGHL_VISIO_EARLY_MINUTES = int(os.getenv('SGHL_VISIO_EARLY_MINUTES', '15'))
+SGHL_VISIO_LATE_MINUTES = int(os.getenv('SGHL_VISIO_LATE_MINUTES', '15'))
 SGHL_SUPPORT_EMAIL = os.getenv('SGHL_SUPPORT_EMAIL', 'support@sghl.local')
 PDF_SIGNING_KEY = os.getenv('PDF_SIGNING_KEY', SECRET_KEY)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

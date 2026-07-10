@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/api_errors.dart';
 import '../services/patient_services.dart';
+import '../widgets/sghl_design_system.dart';
 import 'validate_account_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -99,126 +100,165 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Créer un compte patient')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              if (_error != null) ...[
-                _Banner(text: _error!, error: true),
-                const SizedBox(height: 12),
-              ],
-              TextFormField(
-                controller: _nomController,
-                decoration: const InputDecoration(labelText: 'Nom'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Requis' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _prenomController,
-                decoration: const InputDecoration(labelText: 'Prénom'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Requis' : null,
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  _dateNaissance == null
-                      ? 'Date de naissance *'
-                      : 'Né(e) le ${_dateNaissance!.day}/${_dateNaissance!.month}/${_dateNaissance!.year}',
+      appBar: AppBar(
+        title: const Text('Créer un compte patient'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      extendBodyBehindAppBar: true,
+      body: SghlLoginBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            child: Form(
+              key: _formKey,
+              child: SghlCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Inscription patient',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Renseignez vos informations pour accéder à l\'espace patient.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_error != null) ...[
+                      SghlFeedbackBanner(
+                        message: _error!,
+                        type: SghlFeedbackType.error,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: _nomController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom',
+                        prefixIcon: Icon(Icons.badge_outlined),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Requis' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _prenomController,
+                      decoration: const InputDecoration(
+                        labelText: 'Prénom',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Requis' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: _pickDate,
+                      borderRadius: BorderRadius.circular(16),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Date de naissance',
+                          prefixIcon: Icon(Icons.calendar_today_rounded),
+                        ),
+                        child: Text(
+                          _dateNaissance == null
+                              ? 'Sélectionner une date'
+                              : '${_dateNaissance!.day}/${_dateNaissance!.month}/${_dateNaissance!.year}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _sexe,
+                      decoration: const InputDecoration(
+                        labelText: 'Sexe',
+                        prefixIcon: Icon(Icons.wc_outlined),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'M', child: Text('Masculin')),
+                        DropdownMenuItem(value: 'F', child: Text('Féminin')),
+                        DropdownMenuItem(value: 'A', child: Text('Autre')),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setState(() => _sexe = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'E-mail',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        helperText:
+                            'Un code de validation sera envoyé à cette adresse.',
+                      ),
+                      validator: (v) => (v == null || !v.contains('@'))
+                          ? 'E-mail invalide'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Téléphone',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Mot de passe',
+                        prefixIcon: Icon(Icons.lock_outline_rounded),
+                      ),
+                      validator: (v) => (v == null || v.length < 8)
+                          ? '8 caractères minimum'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _password2Controller,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirmer le mot de passe',
+                        prefixIcon: Icon(Icons.lock_outline_rounded),
+                      ),
+                      validator: (v) => v != _passwordController.text
+                          ? 'Les mots de passe ne correspondent pas'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: _consent,
+                      onChanged: (v) => setState(() => _consent = v ?? false),
+                      title: const Text(
+                        'J\'accepte le traitement de mes données de santé (RGPD).',
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    const SizedBox(height: 20),
+                    SghlCoralButton(
+                      label: _loading ? 'Création…' : 'Créer mon compte',
+                      loading: _loading,
+                      onPressed: _submit,
+                    ),
+                  ],
                 ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _pickDate,
               ),
-              DropdownButtonFormField<String>(
-                value: _sexe,
-                decoration: const InputDecoration(labelText: 'Sexe'),
-                items: const [
-                  DropdownMenuItem(value: 'M', child: Text('Masculin')),
-                  DropdownMenuItem(value: 'F', child: Text('Féminin')),
-                  DropdownMenuItem(value: 'A', child: Text('Autre')),
-                ],
-                onChanged: (v) {
-                  if (v != null) setState(() => _sexe = v);
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail',
-                  helperText: 'Un code de validation sera envoyé à cette adresse.',
-                ),
-                validator: (v) =>
-                    (v == null || !v.contains('@')) ? 'E-mail invalide' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Téléphone'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Mot de passe'),
-                validator: (v) =>
-                    (v == null || v.length < 8) ? '8 caractères minimum' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _password2Controller,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Confirmer le mot de passe'),
-                validator: (v) => v != _passwordController.text
-                    ? 'Les mots de passe ne correspondent pas'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _consent,
-                onChanged: (v) => setState(() => _consent = v ?? false),
-                title: const Text(
-                  'J\'accepte le traitement de mes données de santé (RGPD).',
-                ),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _loading ? null : _submit,
-                child: Text(_loading ? 'Création…' : 'Créer mon compte'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Banner extends StatelessWidget {
-  const _Banner({required this.text, this.error = false});
-
-  final String text;
-  final bool error;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: error
-            ? Theme.of(context).colorScheme.errorContainer
-            : Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(text),
     );
   }
 }

@@ -34,8 +34,15 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              <tr v-for="h in aFacturer" :key="h.hospitalisation_id" class="hover:bg-slate-50">
-                <td class="px-3 py-3 text-slate-700">{{ h.patient_nom }} ({{ h.numero_dossier }})</td>
+              <tr v-for="h in filteredAFacturer" :key="h.hospitalisation_id" class="hover:bg-slate-50">
+                <td class="px-3 py-3">
+                  <RouterLink
+                    :to="{ name: 'patient-detail', params: { id: h.patient_id } }"
+                    class="font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    {{ h.patient_nom }} ({{ h.numero_dossier }})
+                  </RouterLink>
+                </td>
                 <td class="px-3 py-3 text-slate-700">{{ h.statut_hospitalisation }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ h.facture_statut || '—' }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ formatMontant(h.montant_total) }}</td>
@@ -219,11 +226,14 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import api, { downloadPdf, getErrorMessage, unwrapList } from '../api/client.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
+const route = useRoute()
+const patientFilter = ref('')
 const aFacturer = ref([])
 const tarifs = ref([])
 const organismes = ref([])
@@ -246,6 +256,11 @@ const statutLabels = {
   payee: 'Payée',
   annulee: 'Annulée',
 }
+
+const filteredAFacturer = computed(() => {
+  if (!patientFilter.value) return aFacturer.value
+  return aFacturer.value.filter((h) => h.patient_id === patientFilter.value)
+})
 
 function statutLabel(s) {
   return statutLabels[s] || s
@@ -290,6 +305,9 @@ async function loadAll() {
     if (auth.canFacturation) {
       const listRes = await api.get('/facturation/hospitalisations-a-facturer/')
       aFacturer.value = unwrapList(listRes.data)
+    }
+    if (route.query.patient_id) {
+      patientFilter.value = String(route.query.patient_id)
     }
   } catch (e) {
     error.value = getErrorMessage(e)

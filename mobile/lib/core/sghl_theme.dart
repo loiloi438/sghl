@@ -1,89 +1,462 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// Palette alignée sur l'interface web staff SGHL.
+/// Palette SGHL alignée sur la maquette visuelle.
 abstract final class SghlColors {
-  static const primary = Color(0xFF2563EB);
-  static const primaryDark = Color(0xFF1D4ED8);
-  static const accent = Color(0xFF059669);
-  static const bg = Color(0xFFF4F7FB);
-  static const surface = Color(0xFFFFFFFF);
-  static const border = Color(0xFFE2E8F0);
-  static const text = Color(0xFF0F172A);
-  static const muted = Color(0xFF64748B);
+  static const medicalBlue = Color(0xFF1A7FBF);
+  static const navy = Color(0xFF1A233A);
+  static const navyDeep = Color(0xFF0D1B2A);
+  static const medicalBlueDark = Color(0xFF1E3A5F);
+  static const turquoise = Color(0xFF2EC4B6);
+  static const mintGreen = Color(0xFF5CB88A);
+  static const coral = Color(0xFFFF6F61);
+  static const coralSoft = Color(0xFFFFE8E5);
+  static const gold = Color(0xFFFFB347);
+  static const statusGreen = Color(0xFF4CAF50);
 
-  // Mode sombre adouci : fond clair harmonisé (aligné web)
-  static const bgDark = Color(0xFFF4F7FB);
-  static const surfaceDark = Color(0xFFFFFFFF);
-  static const borderDark = Color(0xFFE2E8F0);
-  static const textDark = Color(0xFF0F172A);
+  static const bgLight = Color(0xFFE8F4FC);
+  static const bgLightSoft = Color(0xFFF5FAFF);
+  static const surfaceLight = Color(0xFFFFFFFF);
+
+  /// Texte principal sur fond clair — contraste élevé.
+  static const textLight = Color(0xFF333333);
+  static const mutedLight = Color(0xFF666666);
+  static const subtleLight = Color(0xFF888888);
+
+  static const bgDark = Color(0xFF1A2533);
+  static const surfaceDark = Color(0xFF252D45);
+
+  /// Texte sur fond bleu nuit — blanc pur.
+  static const textDark = Color(0xFFFFFFFF);
+  static const mutedDark = Color(0xFFD0D4DC);
+  static const subtleDark = Color(0xFFB0B6C2);
+
+  static const borderDark = Color(0xFF3D4660);
+
+  static const primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [medicalBlue, turquoise],
+  );
+
+  static const heroGradientLight = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFD6ECFA), Color(0xFFF5FAFF)],
+  );
+
+  static const heroGradientDark = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1A233A), Color(0xFF0D1B2A)],
+  );
+
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFFFFB347), Color(0xFFFF6F61)],
+  );
+
+  static const loginGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFD4E9F7), Color(0xFFF8FBFF)],
+  );
+}
+
+/// Échelle typographique SGHL — Montserrat, lisibilité premium.
+abstract final class SghlTypography {
+  static const double letterSpacing = 0.5;
+  static const double body = 16;
+  static const double bodyLarge = 17;
+  static const double label = 14;
+  static const double title = 20;
+  static const double headline = 24;
+  static const double display = 28;
+
+  static TextStyle montserrat({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required Color color,
+    double? height,
+    double? letterSpacing,
+  }) {
+    return GoogleFonts.montserrat(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height ?? 1.45,
+      letterSpacing: letterSpacing ?? SghlTypography.letterSpacing,
+    );
+  }
+}
+
+class SghlThemeExtension extends ThemeExtension<SghlThemeExtension> {
+  const SghlThemeExtension({
+    required this.primaryGradient,
+    required this.cardShadow,
+    required this.coral,
+    required this.mint,
+    required this.contentCardColor,
+    required this.textOnCard,
+    required this.mutedOnCard,
+  });
+
+  final Gradient primaryGradient;
+  final List<BoxShadow> cardShadow;
+  final Color coral;
+  final Color mint;
+  final Color contentCardColor;
+  final Color textOnCard;
+  final Color mutedOnCard;
+
+  @override
+  SghlThemeExtension copyWith({
+    Gradient? primaryGradient,
+    List<BoxShadow>? cardShadow,
+    Color? coral,
+    Color? mint,
+    Color? contentCardColor,
+    Color? textOnCard,
+    Color? mutedOnCard,
+  }) {
+    return SghlThemeExtension(
+      primaryGradient: primaryGradient ?? this.primaryGradient,
+      cardShadow: cardShadow ?? this.cardShadow,
+      coral: coral ?? this.coral,
+      mint: mint ?? this.mint,
+      contentCardColor: contentCardColor ?? this.contentCardColor,
+      textOnCard: textOnCard ?? this.textOnCard,
+      mutedOnCard: mutedOnCard ?? this.mutedOnCard,
+    );
+  }
+
+  @override
+  SghlThemeExtension lerp(SghlThemeExtension? other, double t) => this;
+}
+
+extension SghlThemeContext on BuildContext {
+  static const _fallback = SghlThemeExtension(
+    primaryGradient: SghlColors.heroGradientLight,
+    cardShadow: [],
+    coral: SghlColors.coral,
+    mint: SghlColors.mintGreen,
+    contentCardColor: SghlColors.surfaceLight,
+    textOnCard: SghlColors.textLight,
+    mutedOnCard: SghlColors.mutedLight,
+  );
+
+  SghlThemeExtension get sghl =>
+      Theme.of(this).extension<SghlThemeExtension>() ?? _fallback;
 }
 
 abstract final class SghlTheme {
-  static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: SghlColors.primary,
-      primary: SghlColors.primary,
-      secondary: SghlColors.accent,
-      surface: SghlColors.surface,
-      brightness: Brightness.light,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: SghlColors.bg,
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
-        elevation: 0,
-        scrolledUnderElevation: 2,
-        backgroundColor: SghlColors.surface,
-        foregroundColor: SghlColors.text,
+  static TextTheme _textTheme({
+    required Color primary,
+    required Color secondary,
+    required Color subtle,
+  }) {
+    return TextTheme(
+      displaySmall: SghlTypography.montserrat(
+        fontSize: SghlTypography.display,
+        fontWeight: FontWeight.w800,
+        color: primary,
       ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: SghlColors.border),
-        ),
-        color: SghlColors.surface,
-        margin: EdgeInsets.zero,
+      headlineSmall: SghlTypography.montserrat(
+        fontSize: SghlTypography.headline,
+        fontWeight: FontWeight.w700,
+        color: primary,
       ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: SghlColors.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 0,
-        ),
+      titleLarge: SghlTypography.montserrat(
+        fontSize: SghlTypography.title,
+        fontWeight: FontWeight.w700,
+        color: primary,
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: SghlColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF475569)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: SghlColors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: SghlColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF60A5FA), width: 1.5),
-        ),
+      titleMedium: SghlTypography.montserrat(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: primary,
       ),
-      chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        side: const BorderSide(color: SghlColors.border),
-        backgroundColor: SghlColors.surface,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+      titleSmall: SghlTypography.montserrat(
+        fontSize: SghlTypography.label,
+        fontWeight: FontWeight.w600,
+        color: primary,
+      ),
+      bodyLarge: SghlTypography.montserrat(
+        fontSize: SghlTypography.bodyLarge,
+        fontWeight: FontWeight.w500,
+        color: primary,
+      ),
+      bodyMedium: SghlTypography.montserrat(
+        fontSize: SghlTypography.body,
+        fontWeight: FontWeight.w500,
+        color: secondary,
+      ),
+      bodySmall: SghlTypography.montserrat(
+        fontSize: SghlTypography.label,
+        fontWeight: FontWeight.w400,
+        color: subtle,
+      ),
+      labelLarge: SghlTypography.montserrat(
+        fontSize: SghlTypography.label,
+        fontWeight: FontWeight.w600,
+        color: primary,
+      ),
+      labelMedium: SghlTypography.montserrat(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: secondary,
+      ),
+      labelSmall: SghlTypography.montserrat(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: subtle,
       ),
     );
   }
 
-  /// Conservé pour compatibilité : même rendu que le thème clair.
-  static ThemeData dark() => light();
+  static List<BoxShadow> _cardShadow(bool dark) => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: dark ? 0.28 : 0.08),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+        ),
+      ];
+
+  static TextStyle _buttonText(Color color) => SghlTypography.montserrat(
+        fontSize: SghlTypography.body,
+        fontWeight: FontWeight.w600,
+        color: color,
+        letterSpacing: 0.4,
+      );
+
+  static ThemeData light() {
+    const ext = SghlThemeExtension(
+      primaryGradient: SghlColors.loginGradient,
+      cardShadow: [],
+      coral: SghlColors.coral,
+      mint: SghlColors.mintGreen,
+      contentCardColor: SghlColors.surfaceLight,
+      textOnCard: SghlColors.textLight,
+      mutedOnCard: SghlColors.mutedLight,
+    );
+
+    final textTheme = _textTheme(
+      primary: SghlColors.textLight,
+      secondary: SghlColors.mutedLight,
+      subtle: SghlColors.subtleLight,
+    );
+
+    final scheme = ColorScheme.light(
+      primary: SghlColors.medicalBlueDark,
+      onPrimary: Colors.white,
+      secondary: SghlColors.mintGreen,
+      onSecondary: SghlColors.textLight,
+      tertiary: SghlColors.coral,
+      surface: SghlColors.surfaceLight,
+      onSurface: SghlColors.textLight,
+      error: SghlColors.coral,
+      onError: Colors.white,
+      outline: const Color(0xFFD8E4EE),
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: SghlColors.bgLightSoft,
+      fontFamily: GoogleFonts.montserrat().fontFamily,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      extensions: [ext.copyWith(cardShadow: _cardShadow(false))],
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: SghlColors.textLight,
+        titleTextStyle: textTheme.titleLarge,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: SghlColors.surfaceLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        margin: EdgeInsets.zero,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: SghlColors.medicalBlueDark,
+          foregroundColor: Colors.white,
+          textStyle: _buttonText(Colors.white),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          elevation: 2,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: SghlColors.medicalBlueDark,
+          backgroundColor: Colors.white,
+          textStyle: _buttonText(SghlColors.medicalBlueDark),
+          side: const BorderSide(color: SghlColors.medicalBlueDark, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: SghlColors.medicalBlueDark,
+          textStyle: _buttonText(SghlColors.medicalBlueDark),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: SghlColors.surfaceLight,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        labelStyle: SghlTypography.montserrat(
+          fontSize: SghlTypography.label,
+          fontWeight: FontWeight.w600,
+          color: SghlColors.mutedLight,
+        ),
+        hintStyle: SghlTypography.montserrat(
+          fontSize: SghlTypography.body,
+          fontWeight: FontWeight.w400,
+          color: SghlColors.subtleLight,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFD8E4EE)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFD8E4EE)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide:
+              const BorderSide(color: SghlColors.medicalBlue, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: SghlColors.coral),
+        ),
+      ),
+    );
+  }
+
+  static ThemeData dark() {
+    const ext = SghlThemeExtension(
+      primaryGradient: SghlColors.heroGradientDark,
+      cardShadow: [],
+      coral: SghlColors.coral,
+      mint: SghlColors.mintGreen,
+      contentCardColor: SghlColors.surfaceLight,
+      textOnCard: SghlColors.textLight,
+      mutedOnCard: SghlColors.mutedLight,
+    );
+
+    final textTheme = _textTheme(
+      primary: SghlColors.textDark,
+      secondary: SghlColors.mutedDark,
+      subtle: SghlColors.subtleDark,
+    );
+
+    final scheme = ColorScheme.dark(
+      primary: SghlColors.turquoise,
+      onPrimary: SghlColors.bgDark,
+      secondary: SghlColors.mintGreen,
+      onSecondary: SghlColors.bgDark,
+      tertiary: SghlColors.coral,
+      surface: SghlColors.surfaceDark,
+      onSurface: SghlColors.textDark,
+      error: SghlColors.coral,
+      onError: Colors.white,
+      outline: SghlColors.borderDark,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: SghlColors.bgDark,
+      fontFamily: GoogleFonts.montserrat().fontFamily,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      extensions: [ext.copyWith(cardShadow: _cardShadow(true))],
+      appBarTheme: AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: SghlColors.textDark,
+        titleTextStyle: textTheme.titleLarge,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: SghlColors.surfaceLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        margin: EdgeInsets.zero,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: SghlColors.turquoise,
+          foregroundColor: SghlColors.bgDark,
+          textStyle: _buttonText(SghlColors.bgDark),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: SghlColors.turquoise,
+          textStyle: _buttonText(SghlColors.turquoise),
+          side: const BorderSide(color: SghlColors.turquoise),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: SghlColors.turquoise,
+          textStyle: _buttonText(SghlColors.turquoise),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: SghlColors.surfaceDark,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        labelStyle: SghlTypography.montserrat(
+          fontSize: SghlTypography.label,
+          fontWeight: FontWeight.w600,
+          color: SghlColors.mutedDark,
+        ),
+        hintStyle: SghlTypography.montserrat(
+          fontSize: SghlTypography.body,
+          fontWeight: FontWeight.w400,
+          color: SghlColors.subtleDark,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: SghlColors.borderDark),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: SghlColors.borderDark),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: SghlColors.turquoise, width: 2),
+        ),
+      ),
+    );
+  }
 }

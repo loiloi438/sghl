@@ -67,12 +67,21 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr v-for="h in hospitalisations" :key="h.id" class="hover:bg-slate-50">
-                <td class="px-3 py-3 text-slate-700">{{ h.patient_prenom }} {{ h.patient_nom }} ({{ h.numero_dossier }})</td>
+                <td class="px-3 py-3">
+                  <RouterLink
+                    v-if="h.patient_id"
+                    :to="{ name: 'patient-detail', params: { id: h.patient_id } }"
+                    class="font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    {{ h.patient_prenom }} {{ h.patient_nom }} ({{ h.numero_dossier }})
+                  </RouterLink>
+                  <span v-else class="text-slate-700">{{ h.patient_prenom }} {{ h.patient_nom }} ({{ h.numero_dossier }})</span>
+                </td>
                 <td class="px-3 py-3 text-slate-700">{{ h.batiment_code }}/{{ h.service_code }} Ch.{{ h.chambre_numero }} Lit {{ h.lit_numero }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ h.motif_admission }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ formatDate(h.date_admission) }}</td>
                 <td v-if="auth.canHospitalisationSortie" class="px-3 py-3">
-                  <button class="rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700" @click="sortir(h)">Sortie</button>
+                  <button class="rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700" @click="requestSortie(h)">Sortie</button>
                 </td>
               </tr>
             </tbody>
@@ -81,14 +90,29 @@
       </div>
     </div>
   </div>
+
+  <ConfirmDialog
+    :open="confirmSortie.open"
+    title="Enregistrer la sortie"
+    :message="confirmSortie.message"
+    confirm-label="Confirmer la sortie"
+    danger
+    :loading="saving"
+    @confirm="confirmSortiePatient"
+    @cancel="confirmSortie.open = false"
+  />
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
+import { showToast } from '../composables/useToast.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
+const route = useRoute()
 const hospitalisations = ref([])
 const patients = ref([])
 const lits = ref([])
@@ -97,6 +121,7 @@ const saving = ref(false)
 const error = ref('')
 const message = ref('')
 const showAdmission = ref(false)
+const confirmSortie = ref({ open: false, message: '', hospitalisation: null })
 
 const admission = reactive({
   patient_id: '',
@@ -132,6 +157,11 @@ async function load() {
       patients.value = unwrapList(results[1].data)
       lits.value = unwrapList(results[2].data)
     }
+    const pid = route.query.patient_id
+    if (pid && auth.canHospitalisationAdmit) {
+      admission.patient_id = String(pid)
+      showAdmission.value = true
+    }
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {
@@ -158,15 +188,29 @@ async function admettre() {
   }
 }
 
-async function sortir(h) {
-  if (!confirm(`Confirmer la sortie de ${h.patient_prenom} ${h.patient_nom} ?`)) return
+function requestSortie(h) {
+  confirmSortie.value = {
+    open: true,
+    message: `Confirmer la sortie de ${h.patient_prenom} ${h.patient_nom} ?`,
+    hospitalisation: h,
+  }
+}
+
+async function confirmSortiePatient() {
+  const h = confirmSortie.value.hospitalisation
+  if (!h) return
+  saving.value = true
   error.value = ''
   try {
     await api.post(`/hospitalisations/${h.id}/sortie/`, { version: h.version })
+    confirmSortie.value.open = false
     message.value = 'Sortie enregistrée.'
+    showToast('Sortie enregistrée.', 'success')
     await load()
   } catch (e) {
     error.value = getErrorMessage(e)
+  } finally {
+    saving.value = false
   }
 }
 

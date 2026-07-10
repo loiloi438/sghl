@@ -200,7 +200,7 @@
                     type="button"
                     class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     :disabled="saving"
-                    @click="annuler(rdv)"
+                    @click="requestAnnuler(rdv)"
                   >
                     Annuler
                   </button>
@@ -211,11 +211,26 @@
         </div>
       </section>
   </div>
+
+  <PromptDialog
+    :open="cancelDialog.open"
+    title="Annuler le rendez-vous"
+    message="Indiquez un motif d'annulation (optionnel)."
+    v-model="cancelDialog.motif"
+    input-label="Motif"
+    placeholder="Annulation par le patient"
+    confirm-label="Confirmer l'annulation"
+    :loading="saving"
+    @confirm="confirmAnnuler"
+    @cancel="cancelDialog.open = false"
+  />
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import PromptDialog from '../../components/PromptDialog.vue'
 import api from '../../api/client.js'
+import { showToast } from '../../composables/useToast.js'
 import { rdvStatutLabel, typeConsultationLabel } from '../../composables/usePatientPortal.js'
 
 const items = ref([])
@@ -224,6 +239,7 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref(null)
 const message = ref(null)
+const cancelDialog = ref({ open: false, motif: 'Annulation par le patient', rdv: null })
 
 const form = reactive({
   email: '',
@@ -338,18 +354,28 @@ async function createRdv() {
   }
 }
 
-async function annuler(rdv) {
-  const motif = window.prompt('Motif d\'annulation (optionnel) :', 'Annulation par le patient')
-  if (motif === null) return
+function requestAnnuler(rdv) {
+  cancelDialog.value = {
+    open: true,
+    motif: 'Annulation par le patient',
+    rdv,
+  }
+}
+
+async function confirmAnnuler(motif) {
+  const rdv = cancelDialog.value.rdv
+  if (!rdv) return
 
   saving.value = true
   error.value = null
   try {
     await api.post(`/patient/rendez-vous/${rdv.id}/annuler/`, {
       version: rdv.version,
-      motif_annulation: motif,
+      motif_annulation: motif || 'Annulation par le patient',
     })
+    cancelDialog.value.open = false
     message.value = 'Rendez-vous annulé. Un e-mail de confirmation vous sera envoyé.'
+    showToast('Rendez-vous annulé.', 'success')
     await load()
   } catch (e) {
     error.value = e.response?.data?.detail || 'Annulation impossible.'

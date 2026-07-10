@@ -119,7 +119,7 @@
                 </td>
                 <td class="px-3 py-3 flex flex-wrap gap-2">
                   <button v-if="o.statut === 'en_attente' && auth.canPharmacie" class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" @click.prevent="preparer(o)">Préparer</button>
-                  <button v-if="['en_attente', 'prepare'].includes(o.statut) && auth.canPharmacie" class="rounded-2xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700" @click.prevent="dispenser(o)">Dispenser</button>
+                  <button v-if="['en_attente', 'prepare'].includes(o.statut) && auth.canPharmacie" class="rounded-2xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700" @click.prevent="requestDispenser(o)">Dispenser</button>
                 </td>
               </tr>
             </tbody>
@@ -154,11 +154,23 @@
       </section>
     </div>
   </div>
+
+  <ConfirmDialog
+    :open="confirmDispense.open"
+    title="Dispenser l'ordonnance"
+    :message="confirmDispense.message"
+    confirm-label="Confirmer la dispensation"
+    :loading="saving"
+    @confirm="confirmDispensation"
+    @cancel="confirmDispense.open = false"
+  />
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
+import { showToast } from '../composables/useToast.js'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
@@ -169,6 +181,8 @@ const aDispenser = ref([])
 const ordres = ref([])
 const error = ref('')
 const message = ref('')
+const saving = ref(false)
+const confirmDispense = ref({ open: false, message: '', ordre: null })
 const appro = reactive({ medId: '', quantite: 50 })
 
 const statutLabels = {
@@ -262,17 +276,31 @@ async function preparer(ordre) {
   }
 }
 
-async function dispenser(ordre) {
-  if (!confirm(`Confirmer la dispensation pour ${ordre.patient_nom} ?`)) return
+function requestDispenser(ordre) {
+  confirmDispense.value = {
+    open: true,
+    message: `Confirmer la dispensation pour ${ordre.patient_nom} ?`,
+    ordre,
+  }
+}
+
+async function confirmDispensation() {
+  const ordre = confirmDispense.value.ordre
+  if (!ordre) return
   error.value = ''
+  saving.value = true
   try {
     await api.post(`/pharmacie/ordres-dispensation/${ordre.id}/dispenser/`, {
       version: ordre.version,
     })
+    confirmDispense.value.open = false
     message.value = 'Médicaments dispensés — stock mis à jour.'
+    showToast('Dispensation enregistrée.', 'success')
     await loadAll()
   } catch (e) {
     error.value = getErrorMessage(e)
+  } finally {
+    saving.value = false
   }
 }
 

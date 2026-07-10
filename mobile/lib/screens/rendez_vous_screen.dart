@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_errors.dart';
+import '../core/sghl_theme.dart';
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
+import '../widgets/sghl_design_system.dart';
 
 class RendezVousScreen extends StatefulWidget {
-  const RendezVousScreen({super.key});
+  const RendezVousScreen({super.key, this.embedded = false});
 
   static const route = '/rendez-vous';
+
+  final bool embedded;
 
   @override
   State<RendezVousScreen> createState() => _RendezVousScreenState();
@@ -50,23 +55,20 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
       _loading = true;
       _error = null;
     });
+    final service = context.read<PatientService>();
     try {
-      final service = context.read<PatientService>();
-      final results = await Future.wait([
-        service.fetchRendezVous(),
-        service.fetchMedecins(),
-      ]);
-      if (mounted) {
-        setState(() {
-          _items = results[0] as List<RendezVousPatient>;
-          _medecins = results[1] as List<MedecinDispo>;
-        });
-      }
+      final items = await service.fetchRendezVous();
+      if (mounted) setState(() => _items = items);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _error = friendlyApiError(e));
     }
+    try {
+      final medecins = await service.fetchMedecins();
+      if (mounted) setState(() => _medecins = medecins);
+    } catch (_) {
+      // La liste des médecins est chargée à la demande pour la prise de RDV.
+    }
+    if (mounted) setState(() => _loading = false);
   }
 
   String _formatDate(String iso) {
@@ -216,105 +218,175 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPad =
+        widget.embedded ? kPatientShellBottomPadding : 16.0;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes rendez-vous')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _loading ? null : () => _showCreateSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Prendre RDV'),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _error != null
-                  ? ListView(
-                      children: [
-                        const SizedBox(height: 120),
-                        Center(
-                          child: Text(_error!, textAlign: TextAlign.center),
-                        ),
-                        const SizedBox(height: 12),
-                        Center(
-                          child: FilledButton(
-                            onPressed: _load,
-                            child: const Text('Réessayer'),
-                          ),
-                        ),
-                      ],
-                    )
-                  : _items.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: Text('Aucun rendez-vous')),
-                      ],
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _items.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final rdv = _items[index];
-                        return Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: const Text('Mes rendez-vous'),
+              leading: const BackButton(),
+            ),
+      floatingActionButton: null,
+      bottomNavigationBar: widget.embedded
+          ? null
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: SghlGradientButton(
+                label: 'Prendre RDV',
+                icon: Icons.add_rounded,
+                compact: true,
+                onPressed:
+                    _loading ? null : () => _showCreateSheet(context),
+              ),
+            ),
+      body: Stack(
+        children: [
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: _error != null
+                      ? ListView(
+                          padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPad),
+                          children: [
+                            if (widget.embedded) _EmbeddedHeader(),
+                            SghlFeedbackBanner(
+                              message: _error!,
+                              type: SghlFeedbackType.error,
+                            ),
+                            const SizedBox(height: 16),
+                            SghlGradientButton(
+                              label: 'Réessayer',
+                              onPressed: _load,
+                            ),
+                            const SizedBox(height: 32),
+                            const SghlMedicalEmptyIllustration(),
+                          ],
+                        )
+                      : _items.isEmpty
+                          ? ListView(
+                              padding:
+                                  EdgeInsets.fromLTRB(16, 16, 16, bottomPad),
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(Icons.event_outlined),
+                                if (widget.embedded) const _EmbeddedHeader(),
+                                const SizedBox(height: 16),
+                                const SghlEmptyState(
+                                  icon: Icons.calendar_month_outlined,
+                                  message: 'Aucun rendez-vous pour le moment',
+                                  subtitle:
+                                      'Prenez rendez-vous avec un médecin en un clic.',
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
+                                const SizedBox(height: 16),
+                                const SghlMedicalEmptyIllustration(),
+                              ],
+                            )
+                          : ListView.separated(
+                              padding: EdgeInsets.fromLTRB(
+                                16,
+                                widget.embedded ? 8 : 16,
+                                16,
+                                bottomPad + 72,
+                              ),
+                              itemCount:
+                                  _items.length + (widget.embedded ? 1 : 0),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 10),
+                              itemBuilder: (context, index) {
+                                if (widget.embedded && index == 0) {
+                                  return const _EmbeddedHeader();
+                                }
+                                final rdv = _items[
+                                    widget.embedded ? index - 1 : index];
+                                return SghlCard(
+                                  lightSurface: true,
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              rdv.medecinNom,
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.titleMedium,
-                                            ),
-                                          ),
-                                          Chip(label: Text(rdv.statutLabel)),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(_formatDate(rdv.dateHeure)),
-                                      const SizedBox(height: 4),
-                                      Text(rdv.motif),
-                                      const SizedBox(height: 8),
-                                      if (rdv.peutAnnuler)
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton(
-                                            onPressed: () => _annuler(rdv),
-                                            child: const Text('Annuler'),
-                                          ),
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: SghlColors.medicalBlue
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
+                                        child: const Icon(
+                                          Icons.event_rounded,
+                                          color: SghlColors.medicalBlue,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    rdv.medecinNom,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                  ),
+                                                ),
+                                                Chip(
+                                                  label: Text(rdv.statutLabel),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(_formatDate(rdv.dateHeure)),
+                                            const SizedBox(height: 4),
+                                            Text(rdv.motif),
+                                            if (rdv.peutAnnuler) ...[
+                                              const SizedBox(height: 8),
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: TextButton(
+                                                  onPressed: () =>
+                                                      _annuler(rdv),
+                                                  child:
+                                                      const Text('Annuler'),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                ),
+          if (widget.embedded)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: kPatientShellBottomPadding - 8,
+              child: Center(
+                child: SghlGradientButton(
+                  label: 'Prendre RDV',
+                  icon: Icons.add_rounded,
+                  compact: true,
+                  onPressed:
+                      _loading ? null : () => _showCreateSheet(context),
+                ),
+              ),
             ),
+        ],
+      ),
     );
   }
 
@@ -462,6 +534,23 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
           },
         );
       },
+    );
+  }
+}
+
+class _EmbeddedHeader extends StatelessWidget {
+  const _EmbeddedHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 48, bottom: 16),
+      child: Text(
+        'Mes rendez-vous',
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:sghl_mobile/core/sghl_theme.dart';
 import 'package:sghl_mobile/core/theme_notifier.dart';
 import 'package:sghl_mobile/screens/login_screen.dart';
 import 'package:sghl_mobile/services/patient_services.dart';
@@ -19,7 +20,10 @@ void main() {
           ChangeNotifierProvider<AuthService>.value(value: auth),
           ChangeNotifierProvider<ThemeNotifier>.value(value: themeNotifier),
         ],
-        child: const MaterialApp(home: LoginScreen()),
+        child: MaterialApp(
+          theme: SghlTheme.light(),
+          home: const LoginScreen(),
+        ),
       ),
     );
 

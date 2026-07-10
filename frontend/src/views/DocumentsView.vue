@@ -87,12 +87,14 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import api, { downloadPdf, getErrorMessage, unwrapList } from '../api/client.js'
 
 const documents = ref([])
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
+const route = useRoute()
 const typeFilter = ref('')
 let searchTimer
 
@@ -140,6 +142,9 @@ function download(document) {
   downloadPdf(document.download_path, `${slug}.pdf`)
 }
 
-onMounted(loadDocuments)
+onMounted(() => {
+  if (route.query.search) search.value = String(route.query.search)
+  loadDocuments()
+})
 </script>
 

@@ -28,6 +28,11 @@ class User(AbstractUser):
         verbose_name = 'utilisateur'
         verbose_name_plural = 'utilisateurs'
 
+    def save(self, *args, **kwargs):
+        if self.email == '':
+            self.email = None
+        super().save(*args, **kwargs)
+
     @property
     def is_staff_medical(self) -> bool:
         return self.role in {

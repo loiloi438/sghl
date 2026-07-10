@@ -1,8 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 
+import 'package:sghl_mobile/core/api_client.dart';
 import 'package:sghl_mobile/models/patient_models.dart';
 
 void main() {
+  test('ApiClient.decodeList accepts JSON array', () {
+    final api = ApiClient();
+    final response = http.Response('[{"id":"1"}]', 200);
+    expect(api.decodeList(response), hasLength(1));
+  });
+
   test('PatientProfil parse JSON', () {
     final profil = PatientProfil.fromJson({
       'id': '550e8400-e29b-41d4-a716-446655440000',

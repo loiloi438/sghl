@@ -17,17 +17,38 @@ Flutter 3 · **portail patient** complet et **staff RDV** (médecin, infirmier).
 
 ## Prérequis
 
-- Flutter SDK 3.10+
+- Flutter SDK 3.9+ (stable, ex. 3.35.x avec Dart 3.9)
 - API SGHL sur `http://127.0.0.1:8000`
 - Émulateur Android : `10.0.2.2:8000` (voir `lib/core/api_config.dart`)
 
 ## Lancer
 
+**Important :** l’API Django doit tourner depuis la **racine du projet** (`sghl/`), pas depuis `mobile/`.
+
+Terminal 1 — backend :
+
 ```powershell
-cd mobile
+cd C:\Users\MOUANGA\sghl
+.\.venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000
+```
+
+Terminal 2 — application :
+
+```powershell
+cd C:\Users\MOUANGA\sghl\mobile
 flutter pub get
 flutter run
 ```
+
+### URL de l’API selon la plateforme
+
+| Plateforme | URL utilisée |
+|------------|----------------|
+| Chrome / Windows desktop | `http://127.0.0.1:8000/api/v1` |
+| Émulateur Android | `http://10.0.2.2:8000/api/v1` |
+| Téléphone physique (Wi‑Fi) | IP du PC, ex. `--dart-define=API_BASE_URL=http://192.168.1.10:8000/api/v1` |
+
+Si vous voyez `ClientException: Failed to fetch`, le backend n’est pas démarré ou la mauvaise URL est utilisée.
 
 ## Comptes démo
 

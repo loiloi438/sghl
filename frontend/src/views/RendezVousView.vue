@@ -114,7 +114,7 @@
       <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-lg font-semibold text-slate-900">Planning</h2>
         <div v-if="loading" class="mt-4 text-sm text-slate-500">Chargement…</div>
-        <div v-else-if="items.length === 0" class="mt-4 text-sm text-slate-500">Aucun rendez-vous pour cette période.</div>
+        <div v-else-if="filteredItems.length === 0" class="mt-4 text-sm text-slate-500">Aucun rendez-vous pour cette période.</div>
         <div v-else class="mt-4 overflow-x-auto">
           <table class="min-w-full divide-y divide-slate-200 text-sm">
             <thead>
@@ -129,7 +129,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              <tr v-for="rdv in items" :key="rdv.id" class="hover:bg-slate-50">
+              <tr v-for="rdv in filteredItems" :key="rdv.id" class="hover:bg-slate-50">
                 <td class="px-3 py-3 text-slate-700">{{ formatDateTime(rdv.date_heure) }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ rdv.patient_nom }} ({{ rdv.numero_dossier }})</td>
                 <td class="px-3 py-3 text-slate-700">{{ rdv.medecin_nom }}</td>
@@ -163,12 +163,14 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
 import RdvStaffPanel from '../components/RdvStaffPanel.vue'
 import { useAuthStore } from '../stores/auth.js'
 
 const auth = useAuthStore()
+const route = useRoute()
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -183,6 +185,12 @@ const filterStatut = ref('')
 const weekDays = ref([])
 const staffPanelOpen = ref(false)
 const selectedRdv = ref(null)
+const patientFilter = ref('')
+
+const filteredItems = computed(() => {
+  if (!patientFilter.value) return items.value
+  return items.value.filter((rdv) => rdv.patient_id === patientFilter.value)
+})
 
 const form = reactive({
   patient_id: '',
@@ -282,6 +290,11 @@ async function load() {
     medecins.value = unwrapList(medecinsRes.data)
     await loadWeek()
     await loadList()
+    const pid = route.query.patient_id
+    if (pid) {
+      patientFilter.value = String(pid)
+      if (auth.canRdv) form.patient_id = String(pid)
+    }
   } catch (e) {
     error.value = getErrorMessage(e)
   }

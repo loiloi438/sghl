@@ -54,7 +54,15 @@
             </thead>
             <tbody class="divide-y divide-slate-200 bg-white">
               <tr v-for="consultation in consultations" :key="consultation.id" class="hover:bg-slate-50">
-                <td class="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-900">{{ consultation.patientName }}</td>
+                <td class="whitespace-nowrap px-4 py-4 text-sm font-semibold text-slate-900">
+                  <button
+                    type="button"
+                    class="font-semibold text-slate-900 underline decoration-slate-200 underline-offset-2 transition hover:text-sky-700 hover:decoration-sky-300"
+                    @click="openPatientDossier(consultation)"
+                  >
+                    {{ consultation.patientName }}
+                  </button>
+                </td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm text-slate-700">Dr {{ consultation.doctorName }}</td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm text-slate-700">{{ consultation.dateTime }}</td>
                 <td class="whitespace-nowrap px-4 py-4 text-sm text-slate-700">{{ consultation.duration }} min</td>
@@ -63,7 +71,7 @@
                 </td>
                 <td class="whitespace-nowrap px-4 py-4">
                   <button v-if="consultation.status === 'scheduled'" @click="joinConsultation(consultation)" class="inline-flex rounded-2xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-700">Rejoindre</button>
-                  <button v-else @click="viewRecording(consultation)" class="inline-flex rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Dossier</button>
+                  <button v-else type="button" @click="openPatientDossier(consultation)" class="inline-flex rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Dossier</button>
                 </td>
               </tr>
             </tbody>
@@ -76,7 +84,10 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
+
+const router = useRouter()
 
 const consultations = ref([])
 const stats = ref({ consultations_ce_mois: 0, en_cours: 0, satisfaction_rate: 0 })
@@ -139,14 +150,23 @@ async function joinConsultation(consultation) {
       const { data } = await api.post(`/teleconsultation/${consultation.id}/lien/`)
       url = data.lien_visio
     }
-    window.open(url, '_blank', 'noopener,noreferrer')
+    const token = url.split('/visio/').pop()?.replace(/\/$/, '')
+    if (!token) {
+      error.value = 'Lien visio invalide.'
+      return
+    }
+    router.push({ name: 'visio', params: { token } })
   } catch (e) {
     error.value = getErrorMessage(e)
   }
 }
 
-function viewRecording(consultation) {
-  alert(`Consultation ${consultation.patientName} — ${statusLabel(consultation.status)}\nLe dossier patient reste accessible depuis le module Patients.`)
+function openPatientDossier(consultation) {
+  if (!consultation.patient_id) {
+    error.value = 'Identifiant patient indisponible pour cette consultation.'
+    return
+  }
+  router.push({ name: 'patient-detail', params: { id: consultation.patient_id } })
 }
 
 onMounted(loadAll)

@@ -177,6 +177,16 @@ export const useAuthStore = defineStore('auth', {
       return true
     },
 
+    async refreshUser() {
+      const { data } = await api.get('/auth/me/')
+      if (!PORTAL_ROLE_SET.has(data.role)) {
+        await this.logout()
+        return false
+      }
+      this.user = data
+      return true
+    },
+
     async logout() {
       const refresh = localStorage.getItem('sghl_refresh_token')
       if (refresh) {

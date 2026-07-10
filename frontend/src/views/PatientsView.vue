@@ -98,15 +98,32 @@
                 <th class="px-3 py-3 font-medium">Naissance</th>
                 <th class="px-3 py-3 font-medium">Sexe</th>
                 <th class="px-3 py-3 font-medium">Téléphone</th>
+                <th class="px-3 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               <tr v-for="p in patients" :key="p.id" class="hover:bg-slate-50">
-                <td class="px-3 py-3"><span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{{ p.numero_dossier }}</span></td>
-                <td class="px-3 py-3 font-semibold text-slate-900">{{ p.prenom }} {{ p.nom }}</td>
+                <td class="px-3 py-3">
+                  <RouterLink :to="{ name: 'patient-detail', params: { id: p.id } }" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                    {{ p.numero_dossier }}
+                  </RouterLink>
+                </td>
+                <td class="px-3 py-3">
+                  <RouterLink :to="{ name: 'patient-detail', params: { id: p.id } }" class="font-semibold text-slate-900 transition hover:text-blue-600">
+                    {{ p.prenom }} {{ p.nom }}
+                  </RouterLink>
+                </td>
                 <td class="px-3 py-3 text-slate-700">{{ p.date_naissance }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ p.sexe === 'M' ? 'M' : 'F' }}</td>
                 <td class="px-3 py-3 text-slate-700">{{ p.telephone || '—' }}</td>
+                <td class="px-3 py-3">
+                  <RouterLink
+                    :to="{ name: 'patient-detail', params: { id: p.id } }"
+                    class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Voir dossier
+                  </RouterLink>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -118,6 +135,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
 import { useAuthStore } from '../stores/auth.js'
 

@@ -105,16 +105,28 @@
             </div>
           </form>
 
-          <form v-else-if="mode === 'mfa'" @submit.prevent="submitMfa" class="mt-7 space-y-6 rounded-[2rem] border border-sky-200 bg-sky-50/80 p-6 shadow-[0_20px_60px_rgba(56,189,248,0.16)]">
+          <form v-else-if="mode === 'mfa'" @submit.prevent="mfaUseTotp ? submitTotpLogin() : submitMfa()" class="mt-7 space-y-6 rounded-[2rem] border border-sky-200 bg-sky-50/80 p-6 shadow-[0_20px_60px_rgba(56,189,248,0.16)]">
             <div class="space-y-3 rounded-3xl border border-sky-300 bg-sky-100 px-4 py-4 text-sm text-slate-900">
               <div class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">Étape 2 : Vérification MFA</div>
-              <p class="text-base font-semibold text-slate-900">Un code a été envoyé à votre adresse e-mail.</p>
-              <p class="text-sm text-slate-700">Saisissez le code de 6 chiffres reçu pour terminer la connexion. Le code expire dans 5 minutes.</p>
+              <p v-if="!mfaUseTotp" class="text-base font-semibold text-slate-900">Un code a été envoyé à votre adresse e-mail.</p>
+              <p v-else class="text-base font-semibold text-slate-900">Saisissez le code de Google Authenticator.</p>
+              <p v-if="!mfaUseTotp" class="text-sm text-slate-700">Saisissez le code de 6 chiffres reçu pour terminer la connexion. Le code expire dans 5 minutes.</p>
+              <p v-else class="text-sm text-slate-700">Ouvrez votre application d’authentification et entrez le code à 6 chiffres affiché.</p>
             </div>
 
             <label class="block space-y-2 text-sm text-slate-700">
-              <span class="font-semibold">Code de sécurité</span>
+              <span class="font-semibold">{{ mfaUseTotp ? 'Code Authenticator' : 'Code de sécurité' }}</span>
               <input
+                v-if="mfaUseTotp"
+                id="totp-code"
+                v-model="totpCode"
+                inputmode="numeric"
+                maxlength="6"
+                required
+                class="w-full rounded-3xl border border-slate-300 bg-white px-4 py-4 text-lg text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+              />
+              <input
+                v-else
                 id="mfa-code"
                 v-model="mfaCode"
                 inputmode="numeric"
@@ -132,7 +144,21 @@
             </button>
             <div class="grid gap-3 text-left text-sm">
               <button type="button" class="text-slate-700 underline decoration-slate-200 transition hover:text-slate-900" @click="switchMode('login')">← Retour à la connexion</button>
-              <button type="button" class="text-sky-700 font-semibold underline decoration-sky-200 transition hover:text-sky-900" @click="resendMfaCode">Renvoyer le code</button>
+              <button
+                v-if="!mfaUseTotp"
+                type="button"
+                class="text-sky-700 font-semibold underline decoration-sky-200 transition hover:text-sky-900"
+                @click="resendMfaCode"
+              >
+                Renvoyer le code
+              </button>
+              <button
+                type="button"
+                class="text-sky-700 font-semibold underline decoration-sky-200 transition hover:text-sky-900"
+                @click="toggleMfaMethod"
+              >
+                {{ mfaUseTotp ? 'Utiliser le code reçu par e-mail' : 'Utiliser Google Authenticator' }}
+              </button>
             </div>
           </form>
 
@@ -265,6 +291,7 @@ const username = ref('')
 const password = ref('')
 const totpCode = ref('')
 const mfaCode = ref('')
+const mfaUseTotp = ref(false)
 const forgotIdentifiant = ref('')
 
 const registerForm = reactive({
@@ -301,7 +328,11 @@ const panelSubtitle = computed(() => {
   }
   if (mode.value === 'forgot') return 'Récupération d\'accès sécurisée'
   if (mode.value === 'reset') return 'Définissez un nouveau mot de passe'
-  if (mode.value === 'mfa') return 'Entrez le code reçu par e-mail pour terminer la connexion.'
+  if (mode.value === 'mfa') {
+    return mfaUseTotp.value
+      ? 'Entrez le code affiché dans Google Authenticator.'
+      : 'Entrez le code reçu par e-mail pour terminer la connexion.'
+  }
   return 'Espace patient ou personnel hospitalier'
 })
 
@@ -311,6 +342,16 @@ function switchMode(next) {
   successMessage.value = ''
   auth.error = null
   mfaCode.value = ''
+  totpCode.value = ''
+  mfaUseTotp.value = false
+}
+
+function toggleMfaMethod() {
+  mfaUseTotp.value = !mfaUseTotp.value
+  mfaCode.value = ''
+  totpCode.value = ''
+  auth.error = null
+  localError.value = ''
 }
 
 function parseResetQuery() {
@@ -333,6 +374,16 @@ async function submitLogin() {
     return
   }
   if (res) {
+    const defaultRoute = { name: auth.homeRoute }
+    router.push(route.query.redirect || defaultRoute)
+  }
+}
+
+async function submitTotpLogin() {
+  localError.value = ''
+  successMessage.value = ''
+  const res = await auth.login(username.value, password.value, totpCode.value.trim())
+  if (res === true) {
     const defaultRoute = { name: auth.homeRoute }
     router.push(route.query.redirect || defaultRoute)
   }

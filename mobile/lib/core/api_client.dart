@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -83,10 +84,20 @@ class ApiClient {
     final headers = await _headers(auth: auth, binary: binary);
 
     http.Response response;
-    if (method == 'GET') {
-      response = await http.get(uri, headers: headers);
-    } else {
-      response = await http.post(uri, headers: headers, body: jsonEncode(body));
+    try {
+      if (method == 'GET') {
+        response = await http.get(uri, headers: headers);
+      } else {
+        response = await http.post(uri, headers: headers, body: jsonEncode(body));
+      }
+    } on SocketException {
+      throw ApiException(
+        'Impossible de se connecter. Vérifiez votre réseau et réessayez.',
+      );
+    } on http.ClientException {
+      throw ApiException(
+        'Impossible de se connecter. Vérifiez votre réseau et réessayez.',
+      );
     }
 
     if (response.statusCode == 401 && auth) {
@@ -141,9 +152,19 @@ class ApiClient {
   }
 
   List<dynamic> decodeList(http.Response response) {
-    final data = decodeMap(response);
-    if (data.containsKey('items')) {
-      return data['items'] as List<dynamic>;
+    if (response.statusCode >= 400) {
+      String message = 'Erreur serveur (${response.statusCode})';
+      try {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        message = (data['detail'] ?? data['message'] ?? message).toString();
+      } catch (_) {}
+      throw ApiException(message, statusCode: response.statusCode);
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) return decoded;
+    if (decoded is Map<String, dynamic> && decoded.containsKey('items')) {
+      return decoded['items'] as List<dynamic>;
     }
     return const [];
   }

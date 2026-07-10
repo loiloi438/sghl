@@ -9,6 +9,7 @@ env/
 # Django
 *.log
 db.sqlite3
+e2e-test.sqlite3
 media/
 staticfiles/
 
@@ -42,11 +43,12 @@ accounts_test_output.txt
 =
 m.group(1)
 
-# Fichiers accidentels (frontend)
+# Fichiers accidentels (frontend — fragments de commandes shell)
 frontend/c.renewalStatus
 frontend/certifications.value)
 frontend/f.status
 frontend/formations.value)
 frontend/s.compliant).length
 frontend/staff.value)
-frontend/{
+frontend/playwright-output.log
+frontend/playwright-run.log
