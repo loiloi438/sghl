@@ -1,0 +1,12 @@
+Bonjour {{ patient_nom }},
+
+Votre espace patient {{ etablissement }} a été créé avec succès.
+
+Identifiant de connexion : {{ username }}
+N° dossier : {{ numero_dossier }}
+
+Vous pouvez vous connecter pour consulter vos rendez-vous, documents et résultats.
+
+Vos données médicales sont protégées et traitées conformément au RGPD.
+
+— {{ etablissement }}

@@ -1,0 +1,11 @@
+Bonjour {{ patient_nom }},
+
+{% if est_soldee %}Nous avons bien enregistré le paiement final de votre facture {{ numero_facture }}.{% else %}Nous avons enregistré un paiement partiel sur votre facture {{ numero_facture }}.{% endif %}
+
+Montant de cette opération : {{ montant_operation }} FCFA
+Montant total facture : {{ montant_total }} FCFA
+Total payé à ce jour : {{ montant_paye }} FCFA
+Reste à payer : {{ montant_restant }} FCFA
+N° dossier : {{ numero_dossier }}
+
+{{ etablissement }}

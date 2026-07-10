@@ -1,0 +1,13 @@
+Bonjour {{ patient_nom }},
+
+Votre facture {{ numero_facture }} à {{ etablissement }} a été validée.
+
+Montant total : {{ montant_total }} FCFA
+Montant déjà réglé : {{ montant_paye }} FCFA
+Reste à payer : {{ montant_restant }} FCFA
+N° dossier : {{ numero_dossier }}
+Statut : {{ statut }}
+
+Pour tout règlement ou question, contactez le service comptabilité de l'établissement.
+
+{{ etablissement }}

@@ -1,0 +1,15 @@
+.venv
+venv
+__pycache__
+*.pyc
+.git
+.env
+db.sqlite3
+frontend/node_modules
+frontend/dist
+mobile/build
+mobile/.dart_tool
+*.md
+!requirements.txt
+.pytest_cache
+media

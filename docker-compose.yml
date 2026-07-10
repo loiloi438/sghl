@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sghl
+      POSTGRES_USER: sghl
+      POSTGRES_PASSWORD: sghl
+    ports:
+      - "5432:5432"
+    volumes:
+      - sghl_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sghl -d sghl']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: docker-dev-secret-change-in-production
+      JWT_SECRET: docker-dev-jwt-secret
+      ALLOWED_HOSTS: localhost,127.0.0.1,api
+      DB_ENGINE: postgresql
+      DB_NAME: sghl
+      DB_USER: sghl
+      DB_PASSWORD: sghl
+      DB_HOST: db
+      DB_PORT: "5432"
+    volumes:
+      - sghl_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  sghl_pg_data:
+  sghl_media:

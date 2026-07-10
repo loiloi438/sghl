@@ -1,0 +1,13 @@
+Bonjour {{ patient_nom }},
+
+Votre rendez-vous du {{ date_heure }} avec Dr {{ medecin_nom }} à {{ etablissement }} a été mis à jour.
+
+{% if changements %}Modifications :
+{{ changements }}
+{% endif %}
+Motif : {{ motif }}
+N° dossier : {{ numero_dossier }}
+
+Merci de vérifier ces informations. Pour toute question, contactez l'établissement.
+
+{{ etablissement }}

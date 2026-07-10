@@ -1,0 +1,14 @@
+Bonjour {{ patient_nom }},
+
+Votre rendez-vous à {{ etablissement }} a été reporté.
+
+Ancienne date : {{ ancienne_date_heure }}
+Nouvelle date : {{ date_heure }}
+Médecin : Dr {{ medecin_nom }}
+Motif : {{ motif }}
+N° dossier : {{ numero_dossier }}
+{% if motif_modification %}Motif du report : {{ motif_modification }}
+
+{% endif %}Merci de vous présenter à la nouvelle date. En cas d'empêchement, contactez l'établissement.
+
+{{ etablissement }}

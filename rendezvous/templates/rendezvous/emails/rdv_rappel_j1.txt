@@ -1,0 +1,14 @@
+Bonjour {{ patient_nom }},
+
+Rappel : vous avez un rendez-vous demain ({{ date_jour }}) à {{ etablissement }}.
+
+Heure : {{ date_heure }}
+Durée : {{ duree_minutes }} minutes
+Médecin : Dr {{ medecin_nom }}
+Motif : {{ motif }}
+N° dossier : {{ numero_dossier }}
+
+Merci de vous présenter à l'heure indiquée avec votre pièce d'identité et votre carte si applicable.
+En cas d'empêchement, contactez l'établissement sans tarder.
+
+{{ etablissement }}

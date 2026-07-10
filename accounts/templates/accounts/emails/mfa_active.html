@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>MFA activé</title></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>Bonjour <strong>{{ utilisateur_nom }}</strong>,</p>
+  <p>L'<strong>authentification à deux facteurs (MFA)</strong> est activée sur votre compte SGHL.</p>
+  <p>Identifiant : <code>{{ username }}</code><br>Rôle : {{ role }}</p>
+  <p style="color: #b45309;">Si vous n'êtes pas à l'origine de cette action, contactez immédiatement l'administrateur.</p>
+  <p style="color: #64748b; font-size: 0.9rem;">{{ etablissement }}</p>
+</body>
+</html>

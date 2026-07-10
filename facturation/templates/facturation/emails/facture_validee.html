@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Facture validée</title></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>Bonjour <strong>{{ patient_nom }}</strong>,</p>
+  <p>Votre facture <strong>{{ numero_facture }}</strong> à <strong>{{ etablissement }}</strong> a été <strong>validée</strong>.</p>
+  <table style="border-collapse: collapse; margin: 1rem 0;">
+    <tr><td style="padding: 4px 12px 4px 0;">Montant total</td><td><strong>{{ montant_total }} FCFA</strong></td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Déjà réglé</td><td>{{ montant_paye }} FCFA</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Reste à payer</td><td>{{ montant_restant }} FCFA</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">N° dossier</td><td>{{ numero_dossier }}</td></tr>
+  </table>
+  <p style="color: #64748b; font-size: 0.9rem;">{{ etablissement }}</p>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Rendez-vous confirmé</title>
+</head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>Bonjour <strong>{{ patient_nom }}</strong>,</p>
+  <p>Votre rendez-vous est <strong style="color: #059669;">confirmé</strong> à <strong>{{ etablissement }}</strong>.</p>
+  <table style="border-collapse: collapse; margin: 1rem 0;">
+    <tr><td style="padding: 4px 12px 4px 0;">Date et heure</td><td><strong>{{ date_heure }}</strong></td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Durée</td><td>{{ duree_minutes }} minutes</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Médecin</td><td>Dr {{ medecin_nom }}</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Motif</td><td>{{ motif }}</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">N° dossier</td><td>{{ numero_dossier }}</td></tr>
+  </table>
+  <p>Merci de vous présenter à l'heure indiquée. En cas d'empêchement, contactez l'établissement le plus tôt possible.</p>
+  <p style="color: #64748b; font-size: 0.9rem;">{{ etablissement }}</p>
+</body>
+</html>

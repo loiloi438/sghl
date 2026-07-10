@@ -1,0 +1,13 @@
+Bonjour {{ patient_nom }},
+
+Votre demande de rendez-vous a bien été enregistrée à {{ etablissement }}.
+
+Date et heure demandées : {{ date_heure }}
+Durée : {{ duree_minutes }} minutes
+Médecin : Dr {{ medecin_nom }}
+Motif : {{ motif }}
+N° dossier : {{ numero_dossier }}
+
+Vous recevrez un message lorsque l'équipe aura confirmé le créneau.
+
+{{ etablissement }}

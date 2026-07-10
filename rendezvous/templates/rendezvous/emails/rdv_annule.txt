@@ -1,0 +1,10 @@
+Bonjour {{ patient_nom }},
+
+Votre rendez-vous du {{ date_heure }} avec Dr {{ medecin_nom }} à {{ etablissement }} a été annulé.
+
+Motif : {{ motif_annulation }}
+N° dossier : {{ numero_dossier }}
+
+Pour replanifier un créneau, contactez l'accueil ou utilisez votre espace patient.
+
+{{ etablissement }}

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Rendez-vous modifié</title></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>Bonjour <strong>{{ patient_nom }}</strong>,</p>
+  <p>Votre rendez-vous du <strong>{{ date_heure }}</strong> a été <strong>mis à jour</strong>.</p>
+  {% if changements %}<pre style="background: #f1f5f9; padding: 12px; border-radius: 8px; white-space: pre-wrap;">{{ changements }}</pre>{% endif %}
+  <p>Médecin : Dr {{ medecin_nom }}<br>Motif : {{ motif }}</p>
+  <p style="color: #64748b; font-size: 0.9rem;">{{ etablissement }}</p>
+</body>
+</html>

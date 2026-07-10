@@ -1,0 +1,8 @@
+Bonjour {{ patient_nom }},
+
+Voici votre code de validation : {{ code_validation }}
+
+Saisissez-le sur le site pour activer votre compte.
+
+Cordialement,
+L'équipe {{ etablissement }}

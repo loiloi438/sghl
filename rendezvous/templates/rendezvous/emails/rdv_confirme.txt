@@ -1,0 +1,13 @@
+Bonjour {{ patient_nom }},
+
+Votre rendez-vous est confirmé à {{ etablissement }}.
+
+Date et heure : {{ date_heure }}
+Durée : {{ duree_minutes }} minutes
+Médecin : Dr {{ medecin_nom }}
+Motif : {{ motif }}
+N° dossier : {{ numero_dossier }}
+
+Merci de vous présenter à l'heure indiquée. En cas d'empêchement, contactez l'établissement le plus tôt possible.
+
+{{ etablissement }}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Demande de rendez-vous</title></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>Bonjour <strong>{{ patient_nom }}</strong>,</p>
+  <p>Votre <strong>demande de rendez-vous</strong> a bien été enregistrée à <strong>{{ etablissement }}</strong>.</p>
+  <table style="border-collapse: collapse; margin: 1rem 0;">
+    <tr><td style="padding: 4px 12px 4px 0;">Date demandée</td><td><strong>{{ date_heure }}</strong></td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Médecin</td><td>Dr {{ medecin_nom }}</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Motif</td><td>{{ motif }}</td></tr>
+  </table>
+  <p>Vous serez informé par e-mail dès que le rendez-vous sera <strong>confirmé</strong> par l'équipe.</p>
+  <p style="color: #64748b; font-size: 0.9rem;">{{ etablissement }}</p>
+</body>
+</html>

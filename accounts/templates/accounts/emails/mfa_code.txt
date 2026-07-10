@@ -1,0 +1,8 @@
+Bonjour {{ utilisateur_nom }},
+
+Votre code de connexion SGHL est : {{ code_mfa }}
+
+Saisissez ce code dans l'application pour terminer la connexion.
+
+Cordialement,
+L'équipe {{ etablissement }}

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Paiement facture</title></head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.5; color: #1e293b;">
+  <p>Bonjour <strong>{{ patient_nom }}</strong>,</p>
+  {% if est_soldee %}
+  <p>Paiement <strong style="color: #059669;">final</strong> enregistré pour la facture <strong>{{ numero_facture }}</strong>.</p>
+  {% else %}
+  <p><strong>Paiement partiel</strong> enregistré pour la facture <strong>{{ numero_facture }}</strong>.</p>
+  {% endif %}
+  <table style="border-collapse: collapse; margin: 1rem 0;">
+    <tr><td style="padding: 4px 12px 4px 0;">Cette opération</td><td><strong>{{ montant_operation }} FCFA</strong></td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Total facture</td><td>{{ montant_total }} FCFA</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Total payé</td><td>{{ montant_paye }} FCFA</td></tr>
+    <tr><td style="padding: 4px 12px 4px 0;">Reste</td><td>{{ montant_restant }} FCFA</td></tr>
+  </table>
+  <p style="color: #64748b; font-size: 0.9rem;">{{ etablissement }}</p>
+</body>
+</html>

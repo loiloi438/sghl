@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Environnement
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins-dependencies
+
+# Node (frontend web plus tard)
+node_modules/
+dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Artefacts temporaires / debug
+*_test_output.txt
+test_*.txt
+testlog.txt
+migrations_out.txt
+stats_test.fail
+tmp_api_*.py
+accounts_test_output.txt
+=
+m.group(1)
+
+# Fichiers accidentels (frontend)
+frontend/c.renewalStatus
+frontend/certifications.value)
+frontend/f.status
+frontend/formations.value)
+frontend/s.compliant).length
+frontend/staff.value)
+frontend/{

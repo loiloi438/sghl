@@ -1,0 +1,16 @@
+Bonjour {{ patient_nom }},
+
+Votre rendez-vous a été planifié à {{ etablissement }}.
+
+Date et heure : {{ date_heure }}
+Durée : {{ duree_minutes }} minutes
+Médecin : Dr {{ medecin_nom }}
+Motif : {{ motif }}
+N° dossier : {{ numero_dossier }}
+
+{% if notes %}Notes : {{ notes }}
+
+{% endif %}Le rendez-vous est en attente de confirmation par l'équipe soignante. Vous recevrez un autre message une fois confirmé.
+
+Merci de votre confiance,
+{{ etablissement }}
