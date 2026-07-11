@@ -23,7 +23,15 @@ sys.exit(1)
 PY
 
 python manage.py migrate --noinput
-python manage.py seed_admin 2>/dev/null || true
-python manage.py seed_demo 2>/dev/null || true
+
+if [ "${SGHL_SEED_ADMIN:-false}" = "true" ]; then
+  echo "Seed administrateur (SGHL_SEED_ADMIN=true)…"
+  python manage.py seed_admin
+fi
+
+if [ "${SGHL_SEED_DEMO:-false}" = "true" ]; then
+  echo "Seed démo (SGHL_SEED_DEMO=true)…"
+  python manage.py seed_demo
+fi
 
 exec "$@"

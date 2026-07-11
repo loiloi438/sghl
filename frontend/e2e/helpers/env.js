@@ -32,6 +32,9 @@ export const djangoEnv = {
   OTP_MODE: 'development',
   LOGIN_RATE_LIMIT_ENABLED: 'False',
   SGHL_FRONTEND_URL: process.env.SGHL_FRONTEND_URL || `http://127.0.0.1:${process.env.E2E_WEB_PORT || '5174'}`,
+  SGHL_ADMIN_PASSWORD: process.env.SGHL_ADMIN_PASSWORD || 'Admin@SGHL2026',
+  SGHL_SEED_ADMIN: 'true',
+  SGHL_SEED_DEMO: 'true',
 }
 
 export const staffCredentials = {

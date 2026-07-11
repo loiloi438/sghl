@@ -68,3 +68,4 @@ jobs:
           SQLITE_NAME: e2e-test.sqlite3
           EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
           LOGIN_RATE_LIMIT_ENABLED: 'False'
+          SGHL_ADMIN_PASSWORD: Admin@SGHL2026

@@ -52,6 +52,10 @@ class Command(BaseCommand):
             return
 
         self.stdout.write('Chargement des données de démonstration…')
+        self.stdout.write(
+            'Assurez-vous que SGHL_ADMIN_PASSWORD est défini dans .env '
+            '(voir .env.example).'
+        )
         call_command('seed_admin', verbosity=1)
         call_command('seed_demo', verbosity=1)
         self.stdout.write(self.style.SUCCESS('Projet prêt (migrations + seeds).'))

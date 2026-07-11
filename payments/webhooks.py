@@ -25,9 +25,14 @@ def verify_webhook_signature(provider: str, request) -> bool:
     """
     secret = _get_secret_for_provider(provider)
     if not secret:
-        # No secret configured -> allow for backwards compatibility in tests/dev
-        logger.debug('No webhook secret configured for provider %s; skipping verification', provider)
-        return True
+        if settings.DEBUG:
+            logger.debug(
+                'No webhook secret configured for provider %s; skipping verification (DEBUG)',
+                provider,
+            )
+            return True
+        logger.error('Webhook secret missing for provider %s in production', provider)
+        return False
 
     # Read raw body bytes from underlying Django request where possible
     raw_body = None

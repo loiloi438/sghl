@@ -1,11 +1,13 @@
 from datetime import date
 
+from django.conf import settings
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from accounts.mfa_service import generate_secret
 from accounts.models import Role, User
+from core.env_utils import env_flag
 from documents.services import obtenir_pdf_labo, obtenir_pdf_ordonnance, obtenir_pdf_facture
 from facturation.services import generer_facture, valider_facture
 from logistics.models import Batiment, Chambre, Lit, Service
@@ -19,6 +21,12 @@ class Command(BaseCommand):
     help = 'Crée des données de démonstration (logistique + patient test).'
 
     def handle(self, *args, **options):
+        if not settings.DEBUG and not env_flag('SGHL_SEED_DEMO'):
+            raise CommandError(
+                'seed_demo est désactivé en production. '
+                'Définissez SGHL_SEED_DEMO=true uniquement pour un environnement de démonstration.'
+            )
+
         batiment, _ = Batiment.objects.get_or_create(
             code='A',
             defaults={'nom': 'Bâtiment principal'},

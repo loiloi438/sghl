@@ -29,7 +29,12 @@ class PaymentsWebhookTests(TestCase):
         self.assertEqual(payment.status, 'pending')
 
         hook = {'provider': 'mtn', 'external_id': payment.external_id, 'status': 'success', 'raw': {'simulated': True}}
-        wh = self.client.post('/payments/webhook/', json=hook)
+        raw = json.dumps(hook).encode('utf-8')
+        secret = 'test_mtn_secret'
+        signature = hmac.new(secret.encode('utf-8'), raw, hashlib.sha256).hexdigest()
+
+        with override_settings(PAYMENTS_MTN_WEBHOOK_SECRET=secret):
+            wh = self.client.post('/payments/webhook/', json=hook, headers={'X-Payments-Signature': signature})
         self.assertEqual(wh.status_code, 200, wh.content)
 
         payment.refresh_from_db()
@@ -47,7 +52,14 @@ class PaymentsWebhookTests(TestCase):
         self.assertEqual(payment.status, 'success')
 
         hook = {'provider': 'stripe', 'external_id': 'stripe_unknown', 'status': 'success', 'raw': {}}
-        wh = self.client.post('/payments/webhook/', json=hook)
+        raw = json.dumps(hook).encode('utf-8')
+        secret = 'test_stripe_secret'
+        ts = str(int(time.time()))
+        sig = hmac.new(secret.encode('utf-8'), (f"{ts}.".encode('utf-8') + raw), hashlib.sha256).hexdigest()
+        header = f"t={ts},v1={sig}"
+
+        with override_settings(PAYMENTS_STRIPE_WEBHOOK_SECRET=secret):
+            wh = self.client.post('/payments/webhook/', json=hook, headers={'Stripe-Signature': header})
         self.assertEqual(wh.status_code, 404)
 
     def test_stripe_webhook_signature_validation(self):

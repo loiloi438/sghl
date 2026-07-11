@@ -216,3 +216,46 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+_INSECURE_SECRET_KEYS = frozenset({
+    '',
+    'django-insecure-dev-only-change-in-production',
+    'change-me-en-production',
+    'docker-dev-secret-change-in-production',
+    'ci-test-secret-key',
+    'ci-e2e-secret-key',
+    'e2e-test-secret-key',
+})
+
+
+def _assert_production_security():
+    if DEBUG:
+        return
+
+    from django.core.exceptions import ImproperlyConfigured
+
+    errors = []
+
+    if SECRET_KEY in _INSECURE_SECRET_KEYS:
+        errors.append('SECRET_KEY doit être une valeur forte et unique lorsque DEBUG=False.')
+
+    if not os.getenv('JWT_SECRET', '').strip():
+        errors.append('JWT_SECRET doit être défini explicitement lorsque DEBUG=False.')
+
+    if JWT_SECRET in _INSECURE_SECRET_KEYS or JWT_SECRET == SECRET_KEY:
+        errors.append('JWT_SECRET doit être fort et distinct de SECRET_KEY lorsque DEBUG=False.')
+
+    if not PDF_SIGNING_KEY or PDF_SIGNING_KEY == SECRET_KEY:
+        errors.append('PDF_SIGNING_KEY doit être défini et distinct de SECRET_KEY lorsque DEBUG=False.')
+
+    if not ALLOWED_HOSTS:
+        errors.append('ALLOWED_HOSTS ne peut pas être vide lorsque DEBUG=False.')
+
+    if not _cors_origins.strip():
+        errors.append('CORS_ALLOWED_ORIGINS doit être renseigné lorsque DEBUG=False.')
+
+    if errors:
+        raise ImproperlyConfigured('Configuration production invalide:\n- ' + '\n- '.join(errors))
+
+
+_assert_production_security()
