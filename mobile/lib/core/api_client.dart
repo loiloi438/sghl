@@ -92,11 +92,11 @@ class ApiClient {
       }
     } on SocketException {
       throw ApiException(
-        'Impossible de se connecter. Vérifiez votre réseau et réessayez.',
+        'Impossible de joindre le serveur. Verifiez l\'URL dans « Serveur SGHL » et votre connexion Wi-Fi.',
       );
     } on http.ClientException {
       throw ApiException(
-        'Impossible de se connecter. Vérifiez votre réseau et réessayez.',
+        'Impossible de joindre le serveur. Verifiez l\'URL dans « Serveur SGHL » et votre connexion Wi-Fi.',
       );
     }
 

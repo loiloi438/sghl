@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_config.dart';
 import '../core/sghl_theme.dart';
 import '../core/theme_notifier.dart';
 import '../services/patient_services.dart';
@@ -25,30 +26,67 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _mfaController = TextEditingController();
+  final _serverController = TextEditingController();
   bool _showPassword = false;
+  bool _showServerSettings = false;
   _AuthMode _mode = _AuthMode.login;
   String? _infoMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!ApiConfig.usesLocalDefault) {
+      _serverController.text = ApiConfig.baseUrl;
+    }
+    _showServerSettings = ApiConfig.usesLocalDefault;
+  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     _mfaController.dispose();
+    _serverController.dispose();
     super.dispose();
   }
 
-  void _fillDemoPatient() {
-    _usernameController.text = 'patient';
-    _passwordController.text = 'Patient@SGHL2026';
-  }
+  Future<bool> _persistServerUrl() async {
+    final raw = _serverController.text.trim();
+    if (raw.isEmpty) {
+      setState(() => _infoMessage = null);
+      if (ApiConfig.usesLocalDefault) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Indiquez l\'adresse du serveur SGHL (ex. http://192.168.1.10:8000/api/v1).',
+            ),
+          ),
+        );
+        return false;
+      }
+      return true;
+    }
 
-  void _fillDemoMedecin() {
-    _usernameController.text = 'medecin';
-    _passwordController.text = 'Medecin@SGHL2026';
+    final uri = Uri.tryParse(raw);
+    if (uri == null ||
+        !uri.hasScheme ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.host.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('URL serveur invalide. Exemple : http://192.168.1.10:8000/api/v1'),
+        ),
+      );
+      return false;
+    }
+
+    await ApiConfig.setBaseUrl(raw);
+    return true;
   }
 
   Future<void> _submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!await _persistServerUrl()) return;
 
     final auth = context.read<AuthService>();
     final result = await auth.login(
@@ -210,6 +248,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           : null,
                       onFieldSubmitted: (_) => _submitLogin(),
                     ),
+                    const SizedBox(height: 16),
+                    _ServerSettings(
+                      expanded: _showServerSettings,
+                      controller: _serverController,
+                      onToggle: () =>
+                          setState(() => _showServerSettings = !_showServerSettings),
+                    ),
                     const SizedBox(height: 24),
                     SghlPrimaryButton(
                       label: auth.loading ? 'Connexion…' : 'Se connecter',
@@ -221,11 +266,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () =>
                           Navigator.pushNamed(context, RegisterScreen.route),
                       child: const Text('Créer un compte patient'),
-                    ),
-                    const SizedBox(height: 20),
-                    _DemoAccounts(
-                      onPatient: _fillDemoPatient,
-                      onMedecin: _fillDemoMedecin,
                     ),
                   ] else ...[
                     Text(
@@ -278,11 +318,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _DemoAccounts extends StatelessWidget {
-  const _DemoAccounts({required this.onPatient, required this.onMedecin});
+class _ServerSettings extends StatelessWidget {
+  const _ServerSettings({
+    required this.expanded,
+    required this.controller,
+    required this.onToggle,
+  });
 
-  final VoidCallback onPatient;
-  final VoidCallback onMedecin;
+  final bool expanded;
+  final TextEditingController controller;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -290,30 +335,46 @@ class _DemoAccounts extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Comptes démo',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    expanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Serveur SGHL',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.person_rounded, size: 20),
-            title: const Text('Patient'),
-            subtitle: const Text('patient / Patient@SGHL2026'),
-            onTap: onPatient,
-          ),
-          const Divider(height: 1),
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.medical_services_rounded, size: 20),
-            title: const Text('Médecin (MFA e-mail)'),
-            subtitle: const Text('medecin / Medecin@SGHL2026'),
-            onTap: onMedecin,
-          ),
+          if (expanded) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Sur téléphone, indiquez l\'adresse IP de votre serveur (même réseau Wi‑Fi).',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(
+                labelText: 'URL de l\'API',
+                hintText: 'http://192.168.1.10:8000/api/v1',
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -3,13 +3,17 @@ import 'package:provider/provider.dart';
 
 import 'app.dart';
 import 'core/api_client.dart';
+import 'core/api_config.dart';
 import 'core/theme_notifier.dart';
 import 'services/notification_inbox_service.dart';
 import 'services/patient_services.dart';
 import 'services/staff_services.dart';
 import 'services/push_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiConfig.init();
+
   final apiClient = ApiClient();
 
   runApp(
