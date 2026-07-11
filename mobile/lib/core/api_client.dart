@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -23,6 +24,7 @@ class ApiClient {
   final FlutterSecureStorage _storage;
   static const _accessKey = 'sghl_access_token';
   static const _refreshKey = 'sghl_refresh_token';
+  static const _requestTimeout = Duration(seconds: 30);
 
   Future<Map<String, String>> _headers({bool auth = true, bool binary = false}) async {
     final headers = <String, String>{};
@@ -86,10 +88,16 @@ class ApiClient {
     http.Response response;
     try {
       if (method == 'GET') {
-        response = await http.get(uri, headers: headers);
+        response = await http.get(uri, headers: headers).timeout(_requestTimeout);
       } else {
-        response = await http.post(uri, headers: headers, body: jsonEncode(body));
+        response = await http
+            .post(uri, headers: headers, body: jsonEncode(body))
+            .timeout(_requestTimeout);
       }
+    } on TimeoutException {
+      throw ApiException(
+        'Delai depasse. Verifiez l\'URL dans « Serveur SGHL » et que le backend tourne (runserver 0.0.0.0:8000).',
+      );
     } on SocketException {
       throw ApiException(
         'Impossible de joindre le serveur. Verifiez l\'URL dans « Serveur SGHL » et votre connexion Wi-Fi.',
@@ -105,13 +113,11 @@ class ApiClient {
       if (refreshed) {
         final retryHeaders = await _headers(auth: true, binary: binary);
         if (method == 'GET') {
-          response = await http.get(uri, headers: retryHeaders);
+          response = await http.get(uri, headers: retryHeaders).timeout(_requestTimeout);
         } else {
-          response = await http.post(
-            uri,
-            headers: retryHeaders,
-            body: jsonEncode(body),
-          );
+          response = await http
+              .post(uri, headers: retryHeaders, body: jsonEncode(body))
+              .timeout(_requestTimeout);
         }
       }
     }
@@ -123,20 +129,27 @@ class ApiClient {
     final refresh = await _storage.read(key: _refreshKey);
     if (refresh == null) return false;
 
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/auth/refresh/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'refresh_token': refresh}),
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/auth/refresh/'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refresh_token': refresh}),
+          )
+          .timeout(_requestTimeout);
 
-    if (response.statusCode != 200) {
+      if (response.statusCode != 200) {
+        await clearTokens();
+        return false;
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      await saveTokens(data['access_token'] as String, data['refresh_token'] as String);
+      return true;
+    } on TimeoutException {
       await clearTokens();
       return false;
     }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    await saveTokens(data['access_token'] as String, data['refresh_token'] as String);
-    return true;
   }
 
   Map<String, dynamic> decodeMap(http.Response response) {

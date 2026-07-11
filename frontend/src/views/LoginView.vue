@@ -72,7 +72,7 @@
                 id="username"
                 v-model="username"
                 autocomplete="username"
-                placeholder="ex. patient ou medecin"
+                placeholder="Votre identifiant"
                 required
                 class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
               />
@@ -229,7 +229,7 @@
             <p class="text-sm text-slate-600">Saisissez votre identifiant ou e-mail. Un lien de réinitialisation sera envoyé par e-mail ou SMS si un compte existe.</p>
             <label class="block space-y-2 text-sm text-slate-700">
               <span>Identifiant ou e-mail</span>
-              <input id="forgot-id" v-model="forgotIdentifiant" autocomplete="username" placeholder="ex. patient ou vous@exemple.com" required class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200" />
+              <input id="forgot-id" v-model="forgotIdentifiant" autocomplete="username" placeholder="Identifiant ou e-mail" required class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200" />
             </label>
             <button class="w-full rounded-3xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="formLoading">
               {{ formLoading ? 'Envoi…' : 'Envoyer le lien' }}

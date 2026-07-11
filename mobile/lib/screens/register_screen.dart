@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/api_errors.dart';
 import '../services/patient_services.dart';
+import '../widgets/server_settings_card.dart';
 import '../widgets/sghl_design_system.dart';
 import 'validate_account_screen.dart';
 
@@ -17,6 +18,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _serverSettingsKey = GlobalKey<ServerSettingsCardState>();
   final _nomController = TextEditingController();
   final _prenomController = TextEditingController();
   final _emailController = TextEditingController();
@@ -63,6 +65,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    final serverOk =
+        await _serverSettingsKey.currentState?.persistServerUrl(context) ?? false;
+    if (!serverOk) return;
+
     setState(() {
       _loading = true;
       _error = null;
@@ -88,7 +94,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.pushReplacementNamed(
         context,
         ValidateAccountScreen.route,
-        arguments: result.username,
+        arguments: {
+          'username': result.username,
+          if (result.devValidationCode != null) 'code': result.devValidationCode,
+        },
       );
     } catch (e) {
       if (mounted) setState(() => _error = friendlyApiError(e));
@@ -138,6 +147,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
+                    ServerSettingsCard(
+                      key: _serverSettingsKey,
+                      initiallyExpanded: true,
+                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _nomController,
                       decoration: const InputDecoration(

@@ -5,6 +5,7 @@ import '../core/api_config.dart';
 import '../core/sghl_theme.dart';
 import '../core/theme_notifier.dart';
 import '../services/patient_services.dart';
+import '../widgets/server_settings_card.dart';
 import '../widgets/sghl_design_system.dart';
 import 'patient_shell.dart';
 import 'register_screen.dart';
@@ -23,70 +24,27 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _serverSettingsKey = GlobalKey<ServerSettingsCardState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _mfaController = TextEditingController();
-  final _serverController = TextEditingController();
   bool _showPassword = false;
-  bool _showServerSettings = false;
   _AuthMode _mode = _AuthMode.login;
   String? _infoMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    if (!ApiConfig.usesLocalDefault) {
-      _serverController.text = ApiConfig.baseUrl;
-    }
-    _showServerSettings = ApiConfig.usesLocalDefault;
-  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     _mfaController.dispose();
-    _serverController.dispose();
     super.dispose();
-  }
-
-  Future<bool> _persistServerUrl() async {
-    final raw = _serverController.text.trim();
-    if (raw.isEmpty) {
-      setState(() => _infoMessage = null);
-      if (ApiConfig.usesLocalDefault) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Indiquez l\'adresse du serveur SGHL (ex. http://192.168.1.10:8000/api/v1).',
-            ),
-          ),
-        );
-        return false;
-      }
-      return true;
-    }
-
-    final uri = Uri.tryParse(raw);
-    if (uri == null ||
-        !uri.hasScheme ||
-        (uri.scheme != 'http' && uri.scheme != 'https') ||
-        uri.host.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('URL serveur invalide. Exemple : http://192.168.1.10:8000/api/v1'),
-        ),
-      );
-      return false;
-    }
-
-    await ApiConfig.setBaseUrl(raw);
-    return true;
   }
 
   Future<void> _submitLogin() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!await _persistServerUrl()) return;
+    final serverOk =
+        await _serverSettingsKey.currentState?.persistServerUrl(context) ?? false;
+    if (!serverOk) return;
 
     final auth = context.read<AuthService>();
     final result = await auth.login(
@@ -172,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Portail patient & staff mobile',
+                              'Espace patient',
                               style: SghlTypography.montserrat(
                                 fontSize: SghlTypography.label,
                                 fontWeight: FontWeight.w500,
@@ -249,11 +207,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       onFieldSubmitted: (_) => _submitLogin(),
                     ),
                     const SizedBox(height: 16),
-                    _ServerSettings(
-                      expanded: _showServerSettings,
-                      controller: _serverController,
-                      onToggle: () =>
-                          setState(() => _showServerSettings = !_showServerSettings),
+                    ServerSettingsCard(
+                      key: _serverSettingsKey,
+                      initiallyExpanded: ApiConfig.usesLocalDefault,
                     ),
                     const SizedBox(height: 24),
                     SghlPrimaryButton(
@@ -313,69 +269,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ServerSettings extends StatelessWidget {
-  const _ServerSettings({
-    required this.expanded,
-    required this.controller,
-    required this.onToggle,
-  });
-
-  final bool expanded;
-  final TextEditingController controller;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return SghlCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    expanded ? Icons.expand_less : Icons.expand_more,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Serveur SGHL',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (expanded) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Sur téléphone, indiquez l\'adresse IP de votre serveur (même réseau Wi‑Fi).',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: controller,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'URL de l\'API',
-                hintText: 'http://192.168.1.10:8000/api/v1',
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

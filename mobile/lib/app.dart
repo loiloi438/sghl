@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -61,7 +63,10 @@ class SghlApp extends StatelessWidget {
       LoginScreen.route => const LoginScreen(),
       RegisterScreen.route => const RegisterScreen(),
       ValidateAccountScreen.route => ValidateAccountScreen(
-          initialUsername: settings.arguments as String? ?? '',
+          initialUsername: (settings.arguments as Map?)?['username'] as String? ??
+              settings.arguments as String? ??
+              '',
+          initialCode: (settings.arguments as Map?)?['code'] as String? ?? '',
         ),
       PatientShell.route => const PatientShell(),
       HomeScreen.route => const HomeScreen(),
@@ -107,7 +112,12 @@ class _RootScreenState extends State<_RootScreen> {
   Future<void> _bootstrap() async {
     await context.read<ThemeNotifier>().load();
     final auth = context.read<AuthService>();
-    final ok = await auth.tryRestoreSession();
+    var ok = false;
+    try {
+      ok = await auth.tryRestoreSession().timeout(const Duration(seconds: 15));
+    } catch (_) {
+      ok = false;
+    }
     if (!mounted) return;
     final home = ok
         ? (auth.isPatient ? PatientShell.route : StaffHomeScreen.route)

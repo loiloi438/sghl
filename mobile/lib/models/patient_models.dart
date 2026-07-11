@@ -356,17 +356,23 @@ class PaymentStatusResult {
 }
 
 class PatientRegisterResult {
-  PatientRegisterResult({required this.username, required this.detail});
+  PatientRegisterResult({
+    required this.username,
+    required this.detail,
+    this.devValidationCode,
+  });
 
   factory PatientRegisterResult.fromJson(Map<String, dynamic> json) {
     return PatientRegisterResult(
       username: json['username'] as String? ?? '',
       detail: json['detail'] as String? ?? '',
+      devValidationCode: json['dev_validation_code'] as String?,
     );
   }
 
   final String username;
   final String detail;
+  final String? devValidationCode;
 }
 
 class MedecinDispo {

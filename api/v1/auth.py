@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Optional
 
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -85,6 +86,7 @@ class PatientRegisterIn(Schema):
 class PatientRegisterOut(Schema):
     username: str
     detail: str
+    dev_validation_code: Optional[str] = None
 
 
 class PasswordForgotIn(Schema):
@@ -103,6 +105,16 @@ def login(request, payload: LoginIn):
     ip = get_client_ip(request)
     if is_login_blocked(ip, payload.username):
         raise HttpError(429, 'Trop de tentatives. Réessayez dans quelques minutes.')
+    try:
+        pending_user = User.objects.get(username=payload.username)
+        if pending_user.check_password(payload.password) and not pending_user.is_active:
+            record_login_failure(ip, payload.username)
+            raise HttpError(
+                403,
+                'Compte non activé. Saisissez le code reçu par e-mail pour valider votre inscription.',
+            )
+    except User.DoesNotExist:
+        pass
     result = login_user(payload.username, payload.password)
     if result is None:
         record_login_failure(ip, payload.username)
@@ -259,7 +271,7 @@ def me(request):
 @router.post('/auth/register/patient/', response=PatientRegisterOut)
 def register_patient(request, payload: PatientRegisterIn):
     try:
-        user = inscrire_patient(
+        user, validation_code = inscrire_patient(
             nom=payload.nom,
             prenom=payload.prenom,
             date_naissance=payload.date_naissance,
@@ -287,6 +299,7 @@ def register_patient(request, payload: PatientRegisterIn):
             'Compte patient créé. Un e-mail de confirmation vous a été envoyé si applicable. '
             'Veuillez saisir le code reçu pour activer votre compte.'
         ),
+        dev_validation_code=validation_code if settings.DEBUG else None,
     )
 
 

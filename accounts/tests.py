@@ -404,4 +404,4 @@ class StaffMfaLoginTests(TestCase):
             '/auth/login/',
             json={'username': 'patient_inactif', 'password': 'Patient@SGHL2026'},
         )
-        self.assertEqual(login_res.status_code, 401, login_res.content)
+        self.assertEqual(login_res.status_code, 403, login_res.content)

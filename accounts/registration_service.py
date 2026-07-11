@@ -87,8 +87,8 @@ def inscrire_patient(
     password: str,
     password_confirm: str,
     consentement_rgpd: bool,
-) -> User:
-    """Crée un compte patient + dossier. Retourne l'objet user (compte inactif).
+) -> tuple[User, str]:
+    """Crée un compte patient + dossier. Retourne (user inactif, code validation).
     Une validation par code est générée et envoyée par e-mail si possible.
     """
     nom = nom.strip()
@@ -146,13 +146,13 @@ def inscrire_patient(
         user.save(update_fields=['is_active'])
 
     # generate and send validation code
-    _create_account_validation(user, patient)
+    validation_code = _create_account_validation(user, patient)
     # send generic welcome/inscription email as well (synchronously in tests)
     try:
         notifier_inscription_patient(user.id, patient.id)
     except Exception:
         pass
-    return user
+    return user, validation_code
 
 
 def verifier_code_validation(*, username: str, code: str) -> User:

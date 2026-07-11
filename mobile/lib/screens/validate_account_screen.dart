@@ -7,11 +7,16 @@ import '../widgets/sghl_design_system.dart';
 import 'login_screen.dart';
 
 class ValidateAccountScreen extends StatefulWidget {
-  const ValidateAccountScreen({super.key, this.initialUsername = ''});
+  const ValidateAccountScreen({
+    super.key,
+    this.initialUsername = '',
+    this.initialCode = '',
+  });
 
   static const route = '/validate-account';
 
   final String initialUsername;
+  final String initialCode;
 
   @override
   State<ValidateAccountScreen> createState() => _ValidateAccountScreenState();
@@ -19,7 +24,7 @@ class ValidateAccountScreen extends StatefulWidget {
 
 class _ValidateAccountScreenState extends State<ValidateAccountScreen> {
   late final TextEditingController _usernameController;
-  final _codeController = TextEditingController();
+  late final TextEditingController _codeController;
   bool _loading = false;
   bool _resendLoading = false;
   String? _message;
@@ -29,6 +34,7 @@ class _ValidateAccountScreenState extends State<ValidateAccountScreen> {
   void initState() {
     super.initState();
     _usernameController = TextEditingController(text: widget.initialUsername);
+    _codeController = TextEditingController(text: widget.initialCode);
   }
 
   @override

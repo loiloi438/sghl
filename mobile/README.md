@@ -50,12 +50,11 @@ flutter run
 
 Si vous voyez `ClientException: Failed to fetch`, le backend n’est pas démarré ou la mauvaise URL est utilisée.
 
-## Comptes démo
+## Connexion depuis un telephone
 
-| Rôle | Identifiant | Mot de passe |
-|------|-------------|--------------|
-| Patient | `patient` | `Patient@SGHL2026` |
-| Médecin | `medecin` | `Medecin@SGHL2026` (+ code MFA e-mail) |
+1. Demarrer le backend : `python manage.py runserver 0.0.0.0:8000`
+2. Dans l'app, ouvrir **Serveur SGHL** et saisir l'IP du PC (ex. `http://192.168.1.10:8000/api/v1`)
+3. Telephone et PC sur le **meme reseau Wi-Fi**
 
 ## Inscription patient
 

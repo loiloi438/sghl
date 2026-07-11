@@ -8,13 +8,25 @@ Set-Location $PSScriptRoot\..\mobile
 
 if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
     $ip = (
-        Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Get-NetIPConfiguration -ErrorAction SilentlyContinue |
         Where-Object {
-            $_.InterfaceAlias -notmatch 'Loopback' -and
-            $_.IPAddress -notlike '169.254.*'
+            $_.IPv4DefaultGateway -and
+            $_.NetAdapter.Status -eq 'Up' -and
+            $_.NetAdapter.InterfaceDescription -notmatch 'VirtualBox|VMware|Hyper-V|Loopback|TAP|VPN'
         } |
-        Select-Object -First 1
+        Select-Object -First 1 -ExpandProperty IPv4Address
     ).IPAddress
+
+    if (-not $ip) {
+        $ip = (
+            Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.InterfaceAlias -notmatch 'Loopback|VirtualBox|VMware|vEthernet|VPN' -and
+                $_.IPAddress -notlike '169.254.*'
+            } |
+            Select-Object -First 1
+        ).IPAddress
+    }
     if ($ip) {
         $ApiBaseUrl = "http://${ip}:8000/api/v1"
         Write-Host "API detectee sur le reseau local : $ApiBaseUrl" -ForegroundColor Cyan

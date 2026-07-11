@@ -23,7 +23,9 @@ bool _looksLikeNetworkError(String text) {
       text.contains('failed to fetch') ||
       text.contains('connection refused') ||
       text.contains('network is unreachable') ||
-      text.contains('clientexception');
+      text.contains('clientexception') ||
+      text.contains('delai depasse') ||
+      text.contains('timeoutexception');
 }
 
 String _humanizeMessage(String message) {
