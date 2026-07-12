@@ -67,13 +67,7 @@
 
       <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <div class="overflow-hidden rounded-[28px] border border-slate-200">
-          <iframe
-            title="Carte localisation SGHL"
-            :src="osmEmbedUrl"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-            class="h-[420px] w-full"
-          ></iframe>
+          <div ref="mapContainer" class="h-[420px] w-full" aria-label="Carte localisation SGHL" />
         </div>
       </section>
 
@@ -113,13 +107,28 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import L from 'leaflet'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import 'leaflet/dist/leaflet.css'
+
 import api, { getErrorMessage } from '../api/client.js'
 
-const hospitalCoords = {
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+})
+
+const HOSPITAL_MARKER_LABEL = 'SGHL — Centre Hospitalier'
+
+const hospitalCoords = ref({
   lat: -4.2839,
   lon: 12.9860,
-}
+})
 
 const loading = ref(true)
 const loadError = ref('')
@@ -130,27 +139,22 @@ const etablissement = ref({
   email: '',
 })
 
+const mapContainer = ref(null)
+let mapInstance = null
+
 const locationLoading = ref(false)
 const locationError = ref('')
 const locationDenied = ref(false)
 const userCoords = ref(null)
 
-const osmEmbedUrl = computed(() => {
-  const left = hospitalCoords.lon - 0.006
-  const right = hospitalCoords.lon + 0.006
-  const top = hospitalCoords.lat + 0.005
-  const bottom = hospitalCoords.lat - 0.005
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${hospitalCoords.lat}%2C${hospitalCoords.lon}`
-})
-
 const googleMapsUrl = computed(
   () =>
-    `https://www.google.com/maps/search/?api=1&query=${hospitalCoords.lat},${hospitalCoords.lon}`,
+    `https://www.google.com/maps/search/?api=1&query=${hospitalCoords.value.lat},${hospitalCoords.value.lon}`,
 )
 
 const googleDirectionsUrl = computed(
   () =>
-    `https://www.google.com/maps/dir/?api=1&destination=${hospitalCoords.lat},${hospitalCoords.lon}&travelmode=driving`,
+    `https://www.google.com/maps/dir/?api=1&destination=${hospitalCoords.value.lat},${hospitalCoords.value.lon}&travelmode=driving`,
 )
 
 function getDistanceKm(a, b) {
@@ -169,7 +173,7 @@ function getDistanceKm(a, b) {
 
 const distanceKm = computed(() => {
   if (!userCoords.value) return '--'
-  return getDistanceKm(userCoords.value, hospitalCoords).toFixed(1)
+  return getDistanceKm(userCoords.value, hospitalCoords.value).toFixed(1)
 })
 
 const walkingTime = computed(() => {
@@ -185,6 +189,32 @@ const drivingTime = computed(() => {
 })
 
 const locationReady = computed(() => !!userCoords.value && !locationLoading.value && !locationError.value)
+
+function initMap() {
+  if (!mapContainer.value || mapInstance) return
+
+  const { lat, lon } = hospitalCoords.value
+  const hospitalName = etablissement.value.organization_name || HOSPITAL_MARKER_LABEL
+
+  mapInstance = L.map(mapContainer.value, { scrollWheelZoom: false }).setView([lat, lon], 15)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(mapInstance)
+
+  const marker = L.marker([lat, lon], { title: HOSPITAL_MARKER_LABEL }).addTo(mapInstance)
+  marker
+    .bindPopup(`<strong>${hospitalName}</strong><br><span>${HOSPITAL_MARKER_LABEL}</span>`)
+    .openPopup()
+}
+
+function destroyMap() {
+  if (mapInstance) {
+    mapInstance.remove()
+    mapInstance = null
+  }
+}
 
 function requestGeolocation() {
   if (!navigator.geolocation) {
@@ -221,11 +251,30 @@ onMounted(async () => {
   try {
     const { data } = await api.get('/parametres/public/')
     etablissement.value = data
+    if (data.latitude != null && data.longitude != null) {
+      hospitalCoords.value = { lat: data.latitude, lon: data.longitude }
+    }
   } catch (e) {
     loadError.value = getErrorMessage(e)
   } finally {
     loading.value = false
   }
+
+  await nextTick()
+  if (!loadError.value) {
+    initMap()
+  }
   requestGeolocation()
 })
+
+onBeforeUnmount(() => {
+  destroyMap()
+})
 </script>
+
+<style scoped>
+:deep(.leaflet-popup-content) {
+  margin: 10px 14px;
+  line-height: 1.5;
+}
+</style>

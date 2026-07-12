@@ -1,5 +1,6 @@
 from typing import Optional
 
+from django.conf import settings
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -12,11 +13,25 @@ router = Router(tags=['Paramètres'])
 jwt_auth = JWTAuth()
 
 
+def _contact_email(cfg: ConfigurationEtablissement) -> str:
+    for candidate in (
+        getattr(settings, 'SGHL_ADMIN_EMAIL', ''),
+        getattr(settings, 'SGHL_SUPPORT_EMAIL', ''),
+        cfg.email,
+    ):
+        email = (candidate or '').strip()
+        if email and email != 'support@sghl.local':
+            return email
+    return (cfg.email or '').strip() or getattr(settings, 'SGHL_SUPPORT_EMAIL', 'support@sghl.local')
+
+
 class ParametresPublicOut(Schema):
     organization_name: str
     address: str
     phone: str
     email: str
+    latitude: float
+    longitude: float
 
 
 class ParametresOut(Schema):
@@ -90,7 +105,9 @@ def get_parametres_public(request):
         organization_name=cfg.organization_name,
         address=cfg.address,
         phone=cfg.phone,
-        email=cfg.email,
+        email=_contact_email(cfg),
+        latitude=getattr(settings, 'SGHL_LATITUDE', -4.2839),
+        longitude=getattr(settings, 'SGHL_LONGITUDE', 12.9860),
     )
 
 

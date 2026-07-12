@@ -150,6 +150,9 @@ SGHL_JITSI_ROOM_PREFIX = os.getenv('SGHL_JITSI_ROOM_PREFIX', 'sghl-visio')
 SGHL_VISIO_EARLY_MINUTES = int(os.getenv('SGHL_VISIO_EARLY_MINUTES', '15'))
 SGHL_VISIO_LATE_MINUTES = int(os.getenv('SGHL_VISIO_LATE_MINUTES', '15'))
 SGHL_SUPPORT_EMAIL = os.getenv('SGHL_SUPPORT_EMAIL', 'support@sghl.local')
+SGHL_ADMIN_EMAIL = os.getenv('SGHL_ADMIN_EMAIL', '').strip()
+SGHL_LATITUDE = float(os.getenv('SGHL_LATITUDE', '-4.2839'))
+SGHL_LONGITUDE = float(os.getenv('SGHL_LONGITUDE', '12.9860'))
 PDF_SIGNING_KEY = os.getenv('PDF_SIGNING_KEY', SECRET_KEY)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
