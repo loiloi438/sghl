@@ -19,4 +19,4 @@ RUN chmod +x deploy/docker-entrypoint.sh
 EXPOSE 8000
 
 ENTRYPOINT ["/app/deploy/docker-entrypoint.sh"]
-CMD ["gunicorn", "sghl.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
+CMD ["gunicorn", "sghl.wsgi:application", "--workers", "2", "--timeout", "120"]
