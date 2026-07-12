@@ -173,12 +173,19 @@ def envoyer_mfa_code_async(user_id: int, code: str) -> None:
     """Envoie le code MFA sans bloquer la requête HTTP (prod Render / SMTP lent)."""
 
     def _send() -> None:
-        sent = notifier_mfa_code(user_id, code)
-        if not sent and is_otp_production():
-            logger.error('Échec envoi code MFA pour user %s', user_id)
+        try:
+            sent = notifier_mfa_code(user_id, code)
+            if sent:
+                logger.info('Code MFA envoyé par e-mail pour user %s', user_id)
+            elif is_otp_production():
+                logger.error('Échec envoi code MFA pour user %s (vérifiez SMTP / EMAIL_HOST_PASSWORD)', user_id)
+        except Exception:
+            logger.exception('Erreur inattendue envoi code MFA pour user %s', user_id)
 
     if getattr(settings, 'MFA_EMAIL_ASYNC', False):
-        transaction.on_commit(lambda: threading.Thread(target=_send, daemon=True).start())
+        transaction.on_commit(
+            lambda: threading.Thread(target=_send, daemon=False, name=f'mfa-email-{user_id}').start()
+        )
     else:
         _send()
 
