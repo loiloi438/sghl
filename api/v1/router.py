@@ -26,6 +26,7 @@ from api.v1.assurance import router as assurance_router
 from api.v1.inventaire import router as inventaire_router
 from api.v1.urgences import router as urgences_router
 from api.v1.teleconsultation import router as teleconsultation_router
+from api.v1.messagerie import router as messagerie_router
 
 from django.conf import settings
 
@@ -64,5 +65,6 @@ api.add_router('', assurance_router)
 api.add_router('', inventaire_router)
 api.add_router('', urgences_router)
 api.add_router('', teleconsultation_router)
+api.add_router('', messagerie_router)
 if settings.DEBUG:
     api.add_router('', e2e_helpers_router)

@@ -9,6 +9,7 @@ import '../core/sghl_theme.dart';
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
 import '../widgets/sghl_design_system.dart';
+import '../widgets/human_care_widgets.dart';
 
 class RendezVousScreen extends StatefulWidget {
   const RendezVousScreen({super.key, this.embedded = false});
@@ -167,8 +168,8 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
         SnackBar(
           content: Text(
             isTeleconsultation
-                ? 'Téléconsultation planifiée — lien visio disponible dans la liste.'
-                : 'Demande enregistrée — e-mail de confirmation si adresse renseignée.',
+                ? 'Rendez-vous planifié ✅ Lien visio après validation.'
+                : 'Rendez-vous planifié ✅ Le secrétariat vous confirmera bientôt.',
           ),
         ),
       );
@@ -260,17 +261,18 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
           ? null
           : Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: SghlGradientButton(
-                label: 'Prendre RDV',
-                icon: Icons.add_rounded,
+              child: SghlHumanCareButton(
+                label: 'Prendre rendez-vous',
+                icon: Icons.calendar_month_rounded,
                 compact: true,
                 onPressed:
                     _loading ? null : () => _showCreateSheet(context),
               ),
             ),
-      body: Stack(
-        children: [
-          _loading
+      body: SghlHumanCareBackground(
+        child: Stack(
+          children: [
+            _loading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                   onRefresh: _load,
@@ -301,9 +303,9 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                                 const SizedBox(height: 16),
                                 const SghlEmptyState(
                                   icon: Icons.calendar_month_outlined,
-                                  message: 'Aucun rendez-vous pour le moment',
+                                  message: 'Aucun rendez-vous pour l\'instant',
                                   subtitle:
-                                      'Prenez rendez-vous avec un médecin en un clic.',
+                                      'Prenez rendez-vous en quelques clics — nous vous accompagnons 💙',
                                 ),
                                 const SizedBox(height: 16),
                                 const SghlMedicalEmptyIllustration(),
@@ -336,14 +338,13 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          color: SghlColors.medicalBlue
-                                              .withValues(alpha: 0.12),
+                                          color: SghlColors.humanCareSky,
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
                                         child: const Icon(
                                           Icons.event_rounded,
-                                          color: SghlColors.medicalBlue,
+                                          color: SghlColors.humanCareTeal,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -440,9 +441,9 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
               right: 0,
               bottom: kPatientShellBottomPadding - 8,
               child: Center(
-                child: SghlGradientButton(
-                  label: 'Prendre RDV',
-                  icon: Icons.add_rounded,
+                child: SghlHumanCareButton(
+                  label: 'Prendre rendez-vous',
+                  icon: Icons.calendar_month_rounded,
                   compact: true,
                   onPressed:
                       _loading ? null : () => _showCreateSheet(context),
@@ -450,6 +451,7 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
               ),
             ),
         ],
+        ),
       ),
     );
   }
@@ -597,20 +599,16 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 20),
-                  FilledButton(
+                  SghlHumanCareButton(
+                    label: 'Demander le rendez-vous',
+                    icon: Icons.send_rounded,
                     onPressed: _saving
                         ? null
                         : () async {
                             Navigator.pop(ctx);
                             await _createRdv();
                           },
-                    child: _saving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Demander le rendez-vous'),
+                    loading: _saving,
                   ),
                 ],
               ),
@@ -628,12 +626,27 @@ class _EmbeddedHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 48, bottom: 16),
-      child: Text(
-        'Mes rendez-vous',
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+      padding: const EdgeInsets.only(top: 48, bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '🌿 Human-Care',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Mes rendez-vous',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Confirmations et rappels par e-mail 💙',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ),
     );
   }

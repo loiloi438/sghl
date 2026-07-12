@@ -1,39 +1,71 @@
 <template>
-  <div class="space-y-6">
-    <PatientPageHeader title="Mes prescriptions" subtitle="Ordonnances validées par votre médecin" :loading="loading" @refresh="load" />
+  <div class="hc-page">
+    <PatientPageHeader
+      title="Pharmacie"
+      subtitle="Vos prescriptions et leur disponibilité à la pharmacie"
+      module="pharmacy"
+      :loading="loading"
+      @refresh="load"
+    />
 
-    <div v-if="message" class="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ message }}</div>
-    <div v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ error }}</div>
-    <div v-if="loading" class="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">Chargement…</div>
-    <div v-else-if="items.length === 0" class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">Aucune prescription disponible.</div>
+    <div v-if="message" class="hc-alert hc-alert--success">{{ message }}</div>
+    <div v-if="error" class="hc-alert hc-alert--error">{{ error }}</div>
+    <div v-if="loading" class="hc-loading">Chargement de vos ordonnances…</div>
+
+    <PatientEmptyState
+      v-else-if="items.length === 0"
+      icon="💊"
+      title="Aucune prescription pour l’instant"
+      text="Votre médecin vous transmettra vos ordonnances ici dès qu’elles seront disponibles."
+    />
 
     <div v-else class="space-y-4">
-      <article v-for="p in items" :key="p.id" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <article v-for="p in items" :key="p.id" class="hc-list-item">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">{{ prescriptionStatutLabel(p.statut) }}</span>
-            <h2 class="mt-3 text-lg font-semibold text-slate-900">Dr {{ p.medecin_nom }}</h2>
-            <p class="mt-1 text-sm text-slate-500">Validée le {{ formatPatientDate(p.validee_le) }}</p>
+          <div class="flex gap-3">
+            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">
+              {{ pharmacieStatutMeta(p.statut_pharmacie).icon }}
+            </span>
+            <div>
+              <span class="hc-badge" :class="`hc-badge--${pharmacieStatutMeta(p.statut_pharmacie).badge}`">
+                {{ pharmacieStatutMeta(p.statut_pharmacie).label }}
+              </span>
+              <h2 class="mt-2 text-lg font-bold text-teal-950" style="font-family: Poppins, sans-serif">
+                Dr {{ p.medecin_nom }}
+              </h2>
+              <p class="mt-1 text-sm text-slate-500">
+                {{ p.validee_le ? `Validée le ${formatPatientDate(p.validee_le)}` : 'En cours de validation' }}
+              </p>
+            </div>
           </div>
           <button
+            v-if="p.statut === 'validee'"
             type="button"
-            class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+            class="hc-btn-secondary shrink-0"
             :disabled="downloadingId === p.id"
             @click="downloadPdf(p)"
           >
-            {{ downloadingId === p.id ? 'Téléchargement…' : 'PDF ordonnance' }}
+            {{ downloadingId === p.id ? 'Téléchargement…' : '📄 PDF ordonnance' }}
           </button>
         </div>
-        <div v-if="p.diagnostics?.length" class="mt-4">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Diagnostics</h3>
-          <ul class="mt-2 list-inside list-disc text-sm text-slate-700">
-            <li v-for="(d, i) in p.diagnostics" :key="i">{{ d }}</li>
+
+        <div v-if="p.medicaments?.length" class="mt-4">
+          <h3 class="text-xs font-bold uppercase tracking-widest text-teal-700">Médicaments</h3>
+          <ul class="mt-2 space-y-2">
+            <li
+              v-for="(m, i) in p.medicaments"
+              :key="i"
+              class="rounded-xl bg-emerald-50/60 px-3 py-2 text-sm text-slate-700"
+            >
+              💊 {{ m }}
+            </li>
           </ul>
         </div>
-        <div v-if="p.medicaments?.length" class="mt-4">
-          <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Médicaments</h3>
-          <ul class="mt-2 space-y-1 text-sm text-slate-700">
-            <li v-for="(m, i) in p.medicaments" :key="i" class="rounded-2xl bg-slate-50 px-3 py-2">{{ m }}</li>
+
+        <div v-if="p.diagnostics?.length" class="mt-4">
+          <h3 class="text-xs font-bold uppercase tracking-widest text-teal-700">Diagnostics</h3>
+          <ul class="mt-2 list-inside list-disc text-sm text-slate-600">
+            <li v-for="(d, i) in p.diagnostics" :key="i">{{ d }}</li>
           </ul>
         </div>
       </article>
@@ -44,7 +76,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import api, { downloadPdf as fetchPdf, getErrorMessage, unwrapList } from '../../api/client.js'
-import { formatPatientDate, prescriptionStatutLabel } from '../../composables/usePatientPortal.js'
+import { formatPatientDate, pharmacieStatutMeta } from '../../composables/usePatientPortal.js'
+import PatientEmptyState from '../../components/patient/PatientEmptyState.vue'
 import PatientPageHeader from '../../components/patient/PatientPageHeader.vue'
 
 const items = ref([])
@@ -72,7 +105,7 @@ async function downloadPdf(p) {
   error.value = ''
   try {
     await fetchPdf(`/prescriptions/${p.id}/pdf/`, `ordonnance-${p.id}.pdf`)
-    message.value = 'Ordonnance téléchargée.'
+    message.value = 'Ordonnance téléchargée avec succès.'
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {

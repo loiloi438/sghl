@@ -46,9 +46,13 @@
       </aside>
 
       <main class="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
-        <div class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:p-10">
+        <div
+          class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:p-10"
+          :class="{ 'login-patient-panel': mode === 'register' }"
+        >
           <div class="flex items-center justify-between gap-4">
             <div>
+              <p v-if="mode === 'register'" class="login-patient-tag">🌿 Human-Care · Espace patient</p>
               <h2 class="text-2xl font-semibold text-slate-900">{{ panelTitle }}</h2>
               <p class="mt-2 text-sm text-slate-600">{{ panelSubtitle }}</p>
             </div>
@@ -218,7 +222,7 @@
               </span>
             </label>
 
-            <button class="w-full rounded-3xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="formLoading">
+            <button class="hc-btn-rdv a11y-touch w-full disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="formLoading">
               {{ formLoading ? 'Création…' : 'Créer mon compte patient' }}
             </button>
 
@@ -275,9 +279,8 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import api, { getErrorMessage } from '../api/client.js'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import { setPortalTheme } from '../composables/useTheme.js'
 import { useAuthStore } from '../stores/auth.js'
-
-const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -338,6 +341,9 @@ const panelSubtitle = computed(() => {
 
 function switchMode(next) {
   mode.value = next
+  if (next === 'register') {
+    setPortalTheme('patient')
+  }
   localError.value = ''
   successMessage.value = ''
   auth.error = null

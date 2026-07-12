@@ -23,8 +23,8 @@ from hospitalisation.models import Hospitalisation, StatutHospitalisation
 router = Router(tags=['Facturation'])
 jwt_auth = JWTAuth()
 
-ROLES_LECTURE = {Role.ADMIN, Role.COMPTABLE, Role.MEDECIN}
-ROLES_FACTURATION = {Role.ADMIN, Role.COMPTABLE}
+ROLES_LECTURE = {Role.ADMIN, Role.COMPTABLE, Role.MEDECIN, Role.SECRETAIRE}
+ROLES_FACTURATION = {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE}
 
 
 def _check_read(user: User):

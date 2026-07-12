@@ -11,6 +11,7 @@ class Role(models.TextChoices):
     BIOLOGISTE = 'biologiste', 'Biologiste'
     PHARMACIEN = 'pharmacien', 'Pharmacien'
     COMPTABLE = 'comptable', 'Comptable'
+    SECRETAIRE = 'secretaire', 'Secrétaire'
     PATIENT = 'patient', 'Patient'
 
 

@@ -788,7 +788,7 @@ class SghlFloatingNavBar extends StatelessWidget {
 
                 color: selected
                     ? (lightBar
-                        ? SghlColors.medicalBlue.withValues(alpha: 0.12)
+                        ? SghlColors.humanCareTeal.withValues(alpha: 0.12)
                         : Colors.white.withValues(alpha: 0.12))
                     : Colors.transparent,
 
@@ -810,8 +810,8 @@ class SghlFloatingNavBar extends StatelessWidget {
 
                   color: lightBar
                       ? (selected
-                          ? SghlColors.medicalBlue
-                          : SghlColors.mutedLight)
+                          ? SghlColors.humanCareTeal
+                          : SghlColors.humanCareMuted)
                       : (selected
                           ? Colors.white
                           : SghlColors.mutedDark),

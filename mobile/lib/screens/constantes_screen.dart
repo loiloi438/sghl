@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../core/sghl_theme.dart';
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
+import '../widgets/patient_human_care_page.dart';
 
 class ConstantesScreen extends StatefulWidget {
   const ConstantesScreen({super.key});
@@ -26,7 +28,7 @@ class _ConstantesScreenState extends State<ConstantesScreen> {
     }
     if (c.frequenceCardiaque != null) parts.add('FC ${c.frequenceCardiaque}');
     if (c.saturationO2 != null) parts.add('SpO₂ ${c.saturationO2}%');
-    return parts.isEmpty ? 'Données disponibles' : parts.join(' · ');
+    return parts.isEmpty ? 'Mesure enregistrée' : parts.join(' · ');
   }
 
   @override
@@ -47,9 +49,7 @@ class _ConstantesScreenState extends State<ConstantesScreen> {
 
   String _formatDate(String iso) {
     try {
-      return DateFormat(
-        'dd/MM/yyyy HH:mm',
-      ).format(DateTime.parse(iso).toLocal());
+      return DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(iso).toLocal());
     } catch (_) {
       return iso;
     }
@@ -57,36 +57,47 @@ class _ConstantesScreenState extends State<ConstantesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Constantes vitales')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _items.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: Text('Historique vide')),
-                      ],
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _items.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final c = _items[index];
-                        return Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.monitor_heart_outlined),
-                            title: Text(_formatDate(c.mesureLe)),
-                            subtitle: Text(_summary(c)),
-                          ),
-                        );
-                      },
+    return PatientHcListPage(
+      title: 'Constantes vitales',
+      subtitle: 'Suivi de vos mesures par l\'équipe soignante 💙',
+      loading: _loading,
+      onRefresh: _load,
+      emptyIcon: Icons.monitor_heart_outlined,
+      emptyTitle: 'Pas encore de constantes',
+      emptySubtitle: 'Vos mesures apparaîtront ici après vos soins.',
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final c = _items[index];
+        return PatientHcCard(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: SghlColors.humanCareSand.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.monitor_heart_outlined, color: Color(0xFFB45309)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _summary(c),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                     ),
-            ),
+                    const SizedBox(height: 4),
+                    Text(_formatDate(c.mesureLe), style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

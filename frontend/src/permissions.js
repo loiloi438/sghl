@@ -9,19 +9,21 @@ export const STAFF_ROLES = [
   'biologiste',
   'pharmacien',
   'comptable',
+  'secretaire',
 ]
 
 export const WEB_PORTAL_ROLES = [...STAFF_ROLES, PATIENT_ROLE]
 
-export const PATIENTS_READ = STAFF_ROLES
+/** Secrétaire : pas d’accès fiche patient ni tableau de bord clinique */
+export const PATIENTS_READ = STAFF_ROLES.filter((r) => r !== 'secretaire')
 export const PATIENTS_WRITE = ['admin', 'medecin', 'infirmier']
 
 export const HOSPITALISATION_READ = ['admin', 'medecin', 'infirmier', 'biologiste']
 export const HOSPITALISATION_ADMIT = ['admin', 'medecin', 'infirmier']
 export const HOSPITALISATION_SORTIE = ['admin', 'medecin']
 
-export const RDV_READ = ['admin', 'medecin', 'infirmier', 'comptable']
-export const RDV_GESTION = ['admin', 'medecin', 'infirmier']
+export const RDV_READ = ['admin', 'medecin', 'infirmier', 'comptable', 'secretaire']
+export const RDV_GESTION = ['admin', 'medecin', 'infirmier', 'secretaire']
 
 /** Infirmier : consultation ; pharmacien : module Pharmacie uniquement */
 export const PRESCRIPTIONS_READ = ['admin', 'medecin', 'infirmier']
@@ -40,9 +42,10 @@ export const PHARMACIE_READ = ['admin', 'medecin', 'infirmier', 'pharmacien', 'b
 export const PHARMACIE_WRITE = ['admin', 'pharmacien']
 
 export const FACTURATION_READ = ['admin', 'comptable', 'medecin']
-export const FACTURATION_WRITE = ['admin', 'comptable']
+export const FACTURATION_WRITE = ['admin', 'comptable', 'secretaire']
+export const CAISSE_READ = ['admin', 'comptable', 'secretaire']
 
-export const DASHBOARD = STAFF_ROLES
+export const DASHBOARD = STAFF_ROLES.filter((r) => r !== 'secretaire')
 export const AUDIT = ['admin']
 export const STATISTIQUES = ['admin', 'comptable', 'medecin']
 export const ASSURANCE = ['admin', 'comptable']

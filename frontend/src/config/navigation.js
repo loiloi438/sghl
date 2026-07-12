@@ -1,6 +1,8 @@
 import {
   ASSURANCE,
   AUDIT,
+  CAISSE_READ,
+  DASHBOARD,
   DOCUMENTS,
   FACTURATION_READ,
   FORMATION_RH,
@@ -31,11 +33,18 @@ export const NAV_SECTIONS = [
     label: 'Accueil',
     items: [
       {
+        to: '/secretariat',
+        name: 'secretariat',
+        label: 'Secrétariat',
+        icon: 'calendar',
+        roles: ['admin', 'secretaire'],
+      },
+      {
         to: '/',
         name: 'dashboard',
         label: 'Tableau de bord',
         icon: 'dashboard',
-        roles: STAFF_ROLES,
+        roles: DASHBOARD,
       },
       {
         to: '/profil',
@@ -69,6 +78,7 @@ export const NAV_SECTIONS = [
     id: 'administration',
     label: 'Administration',
     items: [
+      { to: '/caisse', name: 'caisse', label: 'Caisse & Secrétariat', icon: 'billing', roles: CAISSE_READ },
       { to: '/facturation', name: 'facturation', label: 'Facturation', icon: 'billing', roles: FACTURATION_READ },
       { to: '/statistiques', name: 'statistiques', label: 'Statistiques & Rapports', icon: 'dashboard', roles: STATISTIQUES },
       { to: '/assurance', name: 'assurance', label: 'Assurance & Mutuelles', icon: 'billing', roles: ASSURANCE },
@@ -97,6 +107,7 @@ export const NAV_SECTIONS = [
     id: 'complementary',
     label: 'Complémentaires',
     items: [
+      { to: '/messagerie', name: 'messagerie', label: 'Messagerie', icon: 'care', roles: STAFF_ROLES },
       { to: '/notifications', name: 'notifications', label: 'Notifications', icon: 'dashboard', roles: NOTIFICATIONS },
       { to: '/urgences', name: 'urgences', label: 'Urgences', icon: 'hospital', roles: URGENCES },
       { to: '/localisation', name: 'localisation', label: 'Contact & Localisation', icon: 'location', roles: LOCALISATION_READ },
@@ -108,12 +119,58 @@ export const NAV_SECTIONS = [
   },
 ]
 
+/** Navigation épurée — secrétaire : RDV, caisse, messagerie (sans modules cliniques). */
+export const SECRETARIAT_NAV_SECTIONS = [
+  {
+    id: 'home',
+    label: 'Accueil',
+    items: [
+      {
+        to: '/secretariat',
+        name: 'secretariat',
+        label: 'Secrétariat',
+        icon: 'calendar',
+        roles: ['admin', 'secretaire'],
+      },
+      {
+        to: '/profil',
+        name: 'profil',
+        label: 'Mon compte',
+        icon: 'patients',
+        roles: ['secretaire'],
+      },
+    ],
+  },
+  {
+    id: 'secretariat',
+    label: 'Secrétariat',
+    items: [
+      { to: '/rendez-vous', name: 'rendez-vous', label: 'Rendez-vous', icon: 'calendar', roles: ['secretaire'] },
+      { to: '/caisse', name: 'caisse', label: 'Caisse', icon: 'billing', roles: ['secretaire'] },
+      { to: '/messagerie', name: 'messagerie', label: 'Messagerie', icon: 'care', roles: ['secretaire'] },
+    ],
+  },
+  {
+    id: 'complementary',
+    label: 'Complémentaires',
+    items: [
+      { to: '/notifications', name: 'notifications', label: 'Notifications', icon: 'dashboard', roles: ['secretaire'] },
+      { to: '/localisation', name: 'localisation', label: 'Contact & Localisation', icon: 'location', roles: ['secretaire'] },
+    ],
+  },
+]
+
+function navSectionsForRole(role) {
+  return role === 'secretaire' ? SECRETARIAT_NAV_SECTIONS : NAV_SECTIONS
+}
+
 const CATEGORY_LABELS = {
   clinical: 'Cliniques',
   operations: 'Opérations',
   administration: 'Administration',
   resources: 'Ressources',
   complementary: 'Complémentaires',
+  secretariat: 'Secrétariat',
 }
 
 function filterItems(items, role) {
@@ -146,10 +203,12 @@ function flattenItems(items, role) {
 }
 
 export function filterNavigation(role) {
-  return NAV_SECTIONS.map((section) => ({
-    ...section,
-    items: filterItems(section.items, role),
-  })).filter((section) => section.items.length > 0)
+  return navSectionsForRole(role)
+    .map((section) => ({
+      ...section,
+      items: filterItems(section.items, role),
+    }))
+    .filter((section) => section.items.length > 0)
 }
 
 export function modulesByCategory(role) {
@@ -159,9 +218,10 @@ export function modulesByCategory(role) {
     administration: [],
     resources: [],
     complementary: [],
+    secretariat: [],
   }
 
-  for (const section of NAV_SECTIONS) {
+  for (const section of navSectionsForRole(role)) {
     if (section.id === 'home') continue
     const items = flattenItems(section.items, role).map((item) => ({
       to: item.to,

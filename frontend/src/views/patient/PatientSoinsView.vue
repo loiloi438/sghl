@@ -1,64 +1,98 @@
 <template>
-  <div class="space-y-6">
-    <PatientPageHeader title="Suivi des soins" subtitle="Constantes vitales, plans de soins et médicaments" :loading="loading" @refresh="loadAll" />
+  <div class="hc-page">
+    <PatientPageHeader
+      title="Soins infirmiers"
+      subtitle="Planning des soins, constantes vitales et suivi personnalisé"
+      module="care"
+      :loading="loading"
+      @refresh="loadAll"
+    />
 
-    <div v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ error }}</div>
+    <div v-if="error" class="hc-alert hc-alert--error">{{ error }}</div>
 
-    <div class="flex flex-wrap gap-2 rounded-3xl bg-slate-50 p-2">
+    <div class="hc-tabs">
       <button
         v-for="tab in tabs"
         :key="tab.id"
         type="button"
-        class="rounded-2xl px-4 py-2 text-sm font-semibold transition"
-        :class="activeTab === tab.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
+        class="hc-tab"
+        :class="{ 'hc-tab--active': activeTab === tab.id }"
         @click="activeTab = tab.id"
       >
         {{ tab.label }}
       </button>
     </div>
 
-    <div v-if="loading" class="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">Chargement…</div>
+    <div v-if="loading" class="hc-loading">Chargement…</div>
 
-    <div v-else-if="activeTab === 'constantes'">
-      <div v-if="constantes.length === 0" class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">Aucune constante enregistrée.</div>
+    <div v-else-if="activeTab === 'planning'">
+      <PatientEmptyState
+        v-if="doses.length === 0"
+        icon="🩺"
+        title="Aucun soin planifié"
+        text="Votre infirmière vous informera dès qu’un nouveau soin sera programmé."
+      />
       <div v-else class="space-y-3">
-        <article v-for="c in constantes" :key="c.id" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p class="text-sm font-semibold text-slate-900">{{ constanteSummary(c) }}</p>
-          <p class="mt-2 text-xs text-slate-500">{{ formatPatientDate(c.mesure_le) }}</p>
+        <article
+          v-for="d in doses"
+          :key="d.id"
+          class="hc-list-item"
+          :class="d.est_en_retard ? 'border-rose-200 bg-rose-50/50' : ''"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">💉</span>
+              <h2 class="font-bold text-slate-900">{{ d.medicament }}</h2>
+            </div>
+            <span class="hc-badge" :class="`hc-badge--${doseStatutMeta(d).badge}`">
+              {{ doseStatutMeta(d).icon }} {{ doseStatutMeta(d).label }}
+            </span>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">{{ d.posologie }}</p>
+          <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+            <span>🕐 {{ formatPatientDate(d.heure_prevue) }}</span>
+            <span v-if="d.infirmier_nom">👩‍⚕️ {{ d.infirmier_nom }}</span>
+          </div>
         </article>
       </div>
     </div>
 
-    <div v-else-if="activeTab === 'plans'">
-      <div v-if="plans.length === 0" class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">Aucun plan de soins.</div>
+    <div v-else-if="activeTab === 'constantes'">
+      <PatientEmptyState
+        v-if="constantes.length === 0"
+        icon="💙"
+        title="Pas encore de constantes"
+        text="Vos mesures apparaîtront ici après votre prochain passage aux soins."
+      />
       <div v-else class="space-y-3">
-        <article v-for="p in plans" :key="p.id" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-base font-semibold text-slate-900">{{ p.titre }}</h2>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ p.statut }}</span>
-          </div>
-          <p class="mt-2 text-sm text-slate-600">{{ p.description || '—' }}</p>
-          <p class="mt-3 text-xs text-slate-500">Début : {{ formatPatientDate(p.date_debut) }}</p>
+        <article v-for="c in constantes" :key="c.id" class="hc-list-item">
+          <p class="font-semibold text-slate-900">{{ constanteSummary(c) }}</p>
+          <p class="mt-2 text-xs text-slate-500">
+            {{ formatPatientDate(c.mesure_le) }}
+            <span v-if="c.infirmier_nom"> · {{ c.infirmier_nom }}</span>
+          </p>
         </article>
       </div>
     </div>
 
     <div v-else>
-      <div v-if="doses.length === 0" class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">Aucune dose planifiée.</div>
+      <PatientEmptyState
+        v-if="plans.length === 0"
+        icon="📋"
+        title="Aucun plan de soins"
+        text="Votre équipe soignante élabore un plan adapté à vos besoins."
+      />
       <div v-else class="space-y-3">
-        <article
-          v-for="d in doses"
-          :key="d.id"
-          class="rounded-3xl border p-5 shadow-sm"
-          :class="d.est_en_retard ? 'border-rose-200 bg-rose-50' : 'border-slate-200 bg-white'"
-        >
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="font-semibold text-slate-900">{{ d.medicament }}</h2>
-            <span v-if="d.est_en_retard" class="rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white">En retard</span>
-            <span v-else class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ d.statut }}</span>
+        <article v-for="p in plans" :key="p.id" class="hc-list-item">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="font-bold text-slate-900">{{ p.titre }}</h2>
+            <span class="hc-badge hc-badge--ok">{{ p.statut }}</span>
           </div>
-          <p class="mt-2 text-sm text-slate-600">{{ d.posologie }}</p>
-          <p class="mt-2 text-xs text-slate-500">Prévu : {{ formatPatientDate(d.heure_prevue) }}</p>
+          <p class="mt-2 text-sm text-slate-600">{{ p.description || '—' }}</p>
+          <p class="mt-3 text-xs text-slate-500">
+            Début : {{ formatPatientDate(p.date_debut) }}
+            <span v-if="p.infirmier_nom"> · {{ p.infirmier_nom }}</span>
+          </p>
         </article>
       </div>
     </div>
@@ -68,16 +102,21 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import api, { getErrorMessage, unwrapList } from '../../api/client.js'
-import { constanteSummary, formatPatientDate } from '../../composables/usePatientPortal.js'
+import {
+  constanteSummary,
+  doseStatutMeta,
+  formatPatientDate,
+} from '../../composables/usePatientPortal.js'
+import PatientEmptyState from '../../components/patient/PatientEmptyState.vue'
 import PatientPageHeader from '../../components/patient/PatientPageHeader.vue'
 
 const tabs = [
+  { id: 'planning', label: 'Planning des soins' },
   { id: 'constantes', label: 'Constantes' },
   { id: 'plans', label: 'Plans de soins' },
-  { id: 'doses', label: 'Médicaments' },
 ]
 
-const activeTab = ref('constantes')
+const activeTab = ref('planning')
 const loading = ref(true)
 const error = ref('')
 const constantes = ref([])

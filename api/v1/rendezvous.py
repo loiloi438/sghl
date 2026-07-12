@@ -31,8 +31,8 @@ from rendezvous.services import (
 router = Router(tags=['Rendez-vous'])
 jwt_auth = JWTAuth()
 
-ROLES_LECTURE = {Role.ADMIN, Role.MEDECIN, Role.INFIRMIER, Role.COMPTABLE}
-ROLES_GESTION = {Role.ADMIN, Role.MEDECIN, Role.INFIRMIER}
+ROLES_LECTURE = {Role.ADMIN, Role.MEDECIN, Role.INFIRMIER, Role.COMPTABLE, Role.SECRETAIRE}
+ROLES_GESTION = {Role.ADMIN, Role.MEDECIN, Role.INFIRMIER, Role.SECRETAIRE}
 
 
 def _handle_error(exc: RendezVousError):
@@ -114,6 +114,9 @@ class ModifierRdvIn(Schema):
 class StatsRdvOut(Schema):
     rdv_aujourdhui: int
     rdv_planifies: int
+    rdv_en_attente: int = 0
+    rdv_valides: int = 0
+    rdv_annules: int = 0
 
 
 class JourSemaineOut(Schema):
@@ -194,12 +197,16 @@ def semaine_rendez_vous(request, date: Optional[str] = None):
 @router.get('/rendez-vous/stats/', response=StatsRdvOut, auth=jwt_auth)
 def stats_rendez_vous(request):
     _check_lecture(request.auth)
+    now = timezone.now()
+    upcoming = RendezVous.objects.filter(date_heure__gte=now)
     return StatsRdvOut(
         rdv_aujourdhui=compter_rdv_jour(),
-        rdv_planifies=RendezVous.objects.filter(
+        rdv_planifies=upcoming.filter(
             statut__in={StatutRendezVous.PLANIFIE, StatutRendezVous.CONFIRME},
-            date_heure__gte=timezone.now(),
         ).count(),
+        rdv_en_attente=upcoming.filter(statut=StatutRendezVous.PLANIFIE).count(),
+        rdv_valides=upcoming.filter(statut=StatutRendezVous.CONFIRME).count(),
+        rdv_annules=RendezVous.objects.filter(statut=StatutRendezVous.ANNULE).count(),
     )
 
 

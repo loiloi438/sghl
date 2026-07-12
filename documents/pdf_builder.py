@@ -174,6 +174,38 @@ def build_facture_pdf(facture, *, doc_ref: str) -> bytes:
     )
 
 
+def build_recu_pdf(facture, *, doc_ref: str) -> bytes:
+    patient = facture.hospitalisation.patient
+    signataire = facture.validee_par
+    nom_signataire = (
+        f'{signataire.first_name} {signataire.last_name}'.strip() or signataire.username
+        if signataire else 'Caisse SGHL'
+    )
+    info = [
+        ['N° facture', facture.numero_facture or '—'],
+        ['Patient', f'{patient.prenom} {patient.nom} ({patient.numero_dossier})'],
+        ['Montant total', _fmt_montant(facture.montant_total)],
+        ['Montant payé', _fmt_montant(facture.montant_paye)],
+        ['Reste dû', _fmt_montant(facture.montant_restant)],
+        ['Mode de paiement', facture.mode_paiement or '—'],
+        ['Référence', facture.reference_paiement or '—'],
+        ['Statut', facture.get_statut_display()],
+        ['Payé le', _fmt_date(facture.payee_le)],
+    ]
+    return _build_pdf(
+        title='Reçu de paiement',
+        subtitle=f'Établi le {_fmt_date(facture.payee_le or timezone.now())}',
+        sections=[('Détails du règlement', info)],
+        signature={
+            'nom': nom_signataire,
+            'role': signataire.get_role_display() if signataire else 'Secrétariat / Caisse',
+            'date': facture.payee_le or timezone.now(),
+            'doc_ref': doc_ref,
+            'empreinte': doc_ref,
+        },
+    )
+
+
 def build_labo_pdf(commande, *, doc_ref: str) -> bytes:
     patient = commande.hospitalisation.patient
     signataire = commande.publiee_par or commande.validee_par

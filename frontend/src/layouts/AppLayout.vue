@@ -40,7 +40,7 @@
     <div class="main-shell">
       <header class="topbar">
         <div class="topbar-left">
-          <p class="topbar-breadcrumb">SGHL · Staff</p>
+          <p class="topbar-breadcrumb">{{ auth.role === 'secretaire' ? 'SGHL · 🌿 Secrétariat' : 'SGHL · 🧬 Tech-Health' }}</p>
           <h1 class="topbar-title">{{ pageTitle }}</h1>
         </div>
         <div class="topbar-actions">
@@ -86,6 +86,7 @@ const roleLabels = {
   biologiste: 'Biologiste',
   pharmacien: 'Pharmacien',
   comptable: 'Comptable',
+  secretaire: 'Secrétaire',
 }
 
 const roleLabel = computed(() => roleLabels[auth.role] || auth.role)

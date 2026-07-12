@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'notifications',
     'payments',
     'rh',
+    'messagerie',
     'assurance',
     'inventaire',
     'urgences',

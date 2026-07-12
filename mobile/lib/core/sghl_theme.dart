@@ -62,6 +62,29 @@ abstract final class SghlColors {
     end: Alignment.bottomCenter,
     colors: [Color(0xFFD4E9F7), Color(0xFFF8FBFF)],
   );
+
+  // Human-Care — portail patient (pastels)
+  static const humanCareBg = Color(0xFFF0FDF9);
+  static const humanCareMint = Color(0xFF6EE7B7);
+  static const humanCareMintDark = Color(0xFF34D399);
+  static const humanCareTeal = Color(0xFF0D9488);
+  static const humanCareText = Color(0xFF134E4A);
+  static const humanCareMuted = Color(0xFF64748B);
+  static const humanCareSky = Color(0xFFE0F2FE);
+  static const humanCareSand = Color(0xFFFEF3C7);
+  static const humanCareLavender = Color(0xFFEDE9FE);
+
+  static const humanCareBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFF0FDF9), Color(0xFFE0F2FE)],
+  );
+
+  static const humanCareCtaGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [Color(0xFF6EE7B7), Color(0xFF34D399)],
+  );
 }
 
 /// Échelle typographique SGHL — Montserrat, lisibilité premium.
@@ -87,6 +110,34 @@ abstract final class SghlTypography {
       color: color,
       height: height ?? 1.45,
       letterSpacing: letterSpacing ?? SghlTypography.letterSpacing,
+    );
+  }
+
+  static TextStyle nunito({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required Color color,
+    double? height,
+  }) {
+    return GoogleFonts.nunito(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height ?? 1.45,
+    );
+  }
+
+  static TextStyle poppins({
+    required double fontSize,
+    required FontWeight fontWeight,
+    required Color color,
+    double? height,
+  }) {
+    return GoogleFonts.poppins(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height ?? 1.35,
     );
   }
 }
@@ -455,6 +506,149 @@ abstract final class SghlTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: const BorderSide(color: SghlColors.turquoise, width: 2),
+        ),
+      ),
+    );
+  }
+
+  /// Thème Human-Care — portail patient (clair, pastels, Nunito/Poppins).
+  static ThemeData patientHumanCare() {
+    const ext = SghlThemeExtension(
+      primaryGradient: SghlColors.humanCareBgGradient,
+      cardShadow: [],
+      coral: SghlColors.coral,
+      mint: SghlColors.humanCareMintDark,
+      contentCardColor: Colors.white,
+      textOnCard: SghlColors.humanCareText,
+      mutedOnCard: SghlColors.humanCareMuted,
+    );
+
+    final textTheme = TextTheme(
+      displaySmall: SghlTypography.poppins(
+        fontSize: SghlTypography.display,
+        fontWeight: FontWeight.w800,
+        color: SghlColors.humanCareText,
+      ),
+      headlineSmall: SghlTypography.poppins(
+        fontSize: SghlTypography.headline,
+        fontWeight: FontWeight.w700,
+        color: SghlColors.humanCareText,
+      ),
+      titleLarge: SghlTypography.poppins(
+        fontSize: SghlTypography.title,
+        fontWeight: FontWeight.w700,
+        color: SghlColors.humanCareText,
+      ),
+      titleMedium: SghlTypography.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: SghlColors.humanCareText,
+      ),
+      titleSmall: SghlTypography.nunito(
+        fontSize: SghlTypography.label,
+        fontWeight: FontWeight.w700,
+        color: SghlColors.humanCareText,
+      ),
+      bodyLarge: SghlTypography.nunito(
+        fontSize: SghlTypography.bodyLarge,
+        fontWeight: FontWeight.w600,
+        color: SghlColors.humanCareText,
+      ),
+      bodyMedium: SghlTypography.nunito(
+        fontSize: SghlTypography.body,
+        fontWeight: FontWeight.w500,
+        color: SghlColors.humanCareMuted,
+      ),
+      bodySmall: SghlTypography.nunito(
+        fontSize: SghlTypography.label,
+        fontWeight: FontWeight.w500,
+        color: SghlColors.humanCareMuted,
+      ),
+      labelLarge: SghlTypography.nunito(
+        fontSize: SghlTypography.label,
+        fontWeight: FontWeight.w700,
+        color: SghlColors.humanCareTeal,
+      ),
+    );
+
+    final scheme = ColorScheme.light(
+      primary: SghlColors.humanCareTeal,
+      onPrimary: Colors.white,
+      secondary: SghlColors.humanCareMintDark,
+      onSecondary: SghlColors.humanCareText,
+      tertiary: SghlColors.coral,
+      surface: Colors.white,
+      onSurface: SghlColors.humanCareText,
+      error: SghlColors.coral,
+      onError: Colors.white,
+      outline: const Color(0xFF99F6E4),
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: SghlColors.humanCareBg,
+      fontFamily: GoogleFonts.nunito().fontFamily,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      extensions: [ext.copyWith(cardShadow: _cardShadow(false))],
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: SghlColors.humanCareText,
+        titleTextStyle: textTheme.titleLarge,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        margin: EdgeInsets.zero,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: SghlColors.humanCareMintDark,
+          foregroundColor: const Color(0xFF064E3B),
+          textStyle: SghlTypography.poppins(
+            fontSize: SghlTypography.body,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF064E3B),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: SghlColors.humanCareTeal,
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: Color(0xFFA7F3D0)),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFECFDF5),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFA7F3D0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFA7F3D0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: SghlColors.humanCareTeal, width: 2),
         ),
       ),
     );

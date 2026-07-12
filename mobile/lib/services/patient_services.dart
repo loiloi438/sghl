@@ -147,6 +147,24 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> completeValidation(String accessToken, String refreshToken) async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _api.saveTokens(accessToken, refreshToken);
+      final meResponse = await _api.get('/auth/me/');
+      final profile = UserProfile.fromJson(_api.decodeMap(meResponse));
+      return await _finalizeLogin(profile);
+    } on ApiException catch (e) {
+      _error = e.message;
+      return false;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
   void clearMfaPending() {
     _pendingMfaUsername = null;
     _error = null;
@@ -170,6 +188,33 @@ class PatientService {
   Future<TableauBord> fetchDashboard() async {
     final response = await _api.get('/patient/tableau-de-bord/');
     return TableauBord.fromJson(_api.decodeMap(response));
+  }
+
+  Future<List<HospitalisationResume>> fetchHospitalisations() async {
+    final response = await _api.get('/patient/hospitalisations/');
+    return _api
+        .decodeList(response)
+        .map((e) => HospitalisationResume.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<PatientMessage>> fetchMessages() async {
+    final response = await _api.get('/patient/messages/');
+    return _api
+        .decodeList(response)
+        .map((e) => PatientMessage.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<PatientMessage> sendMessage({
+    required String sujet,
+    required String corps,
+  }) async {
+    final response = await _api.post('/patient/messages/', {
+      'sujet': sujet.trim(),
+      'corps': corps.trim(),
+    });
+    return PatientMessage.fromJson(_api.decodeMap(response));
   }
 
   Future<List<ConstanteVitale>> fetchConstantes() async {
@@ -252,6 +297,14 @@ class PatientService {
     final name = numeroFacture != null && numeroFacture.isNotEmpty
         ? '$numeroFacture.pdf'
         : 'facture-$factureId.pdf';
+    await PdfDownloadHelper.saveAndOpen(bytes, name);
+  }
+
+  Future<void> downloadRecuPdf(String factureId, {String? numeroFacture}) async {
+    final bytes = await _api.downloadBytes('/facturation/factures/$factureId/recu/');
+    final name = numeroFacture != null && numeroFacture.isNotEmpty
+        ? 'recu-$numeroFacture.pdf'
+        : 'recu-$factureId.pdf';
     await PdfDownloadHelper.saveAndOpen(bytes, name);
   }
 
@@ -338,7 +391,7 @@ class PatientService {
     return PatientRegisterResult.fromJson(_api.decodeMap(response));
   }
 
-  Future<String> validateAccount({
+  Future<ValidateAccountResult> validateAccount({
     required String username,
     required String code,
   }) async {
@@ -347,7 +400,7 @@ class PatientService {
       'code': code.trim(),
     }, auth: false);
     final data = _api.decodeMap(response);
-    return data['detail'] as String? ?? 'Compte activé.';
+    return ValidateAccountResult.fromJson(data);
   }
 
   Future<String> resendValidationCode(String username) async {

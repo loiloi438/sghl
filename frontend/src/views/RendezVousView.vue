@@ -58,7 +58,7 @@
             <select id="filter-statut" v-model="filterStatut" @change="loadList" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500">
               <option value="">Tous</option>
               <option value="planifie">Planifié</option>
-              <option value="confirme">Confirmé</option>
+              <option value="confirme">Validé</option>
               <option value="termine">Terminé</option>
               <option value="annule">Annulé</option>
               <option value="absent">Absent</option>
@@ -67,8 +67,8 @@
         </div>
       </div>
 
-      <div v-if="!auth.canRdv && auth.canRdvRead" class="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-        Accès en lecture seule (comptable) — planification réservée aux médecins et infirmiers.
+      <div v-if="!auth.canRdv && auth.canRdvRead && auth.role === 'comptable'" class="rounded-3xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+        Accès en lecture seule (comptable) — planification réservée aux médecins, infirmiers et secrétaires.
       </div>
 
       <div v-if="auth.canRdv" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -202,7 +202,7 @@ const form = reactive({
 
 const statutLabels = {
   planifie: 'Planifié',
-  confirme: 'Confirmé',
+  confirme: 'Validé',
   annule: 'Annulé',
   termine: 'Terminé',
   absent: 'Absent',

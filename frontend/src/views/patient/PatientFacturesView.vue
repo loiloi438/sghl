@@ -1,59 +1,84 @@
 <template>
-  <div class="space-y-6">
-    <PatientPageHeader title="Mes factures" subtitle="Factures validées, paiement en ligne et historique" :loading="loading" @refresh="load" />
+  <div class="hc-page">
+    <PatientPageHeader
+      title="Factures"
+      subtitle="Historique des paiements et téléchargement de vos reçus"
+      module="invoice"
+      :loading="loading"
+      @refresh="load"
+    />
 
-    <div v-if="message" class="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ message }}</div>
-    <div v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ error }}</div>
-    <div v-if="loading" class="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">Chargement…</div>
-    <div v-else-if="items.length === 0" class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">Aucune facture disponible.</div>
+    <div v-if="message" class="hc-alert hc-alert--success">{{ message }}</div>
+    <div v-if="error" class="hc-alert hc-alert--error">{{ error }}</div>
+    <div v-if="loading" class="hc-loading">Chargement de vos factures…</div>
 
-    <div v-else class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <table class="min-w-full divide-y divide-slate-200 text-sm">
-        <thead class="bg-slate-50 text-slate-500">
-          <tr>
-            <th class="px-4 py-3 text-left font-semibold">N° facture</th>
-            <th class="px-4 py-3 text-left font-semibold">Statut</th>
-            <th class="px-4 py-3 text-left font-semibold">Total</th>
-            <th class="px-4 py-3 text-left font-semibold">Reste à payer</th>
-            <th class="px-4 py-3 text-left font-semibold">Dates</th>
-            <th class="px-4 py-3 text-left font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200">
-          <tr v-for="f in items" :key="f.id" class="hover:bg-slate-50">
-            <td class="px-4 py-4 font-mono text-xs text-slate-600">{{ f.numero_facture || '—' }}</td>
-            <td class="px-4 py-4">
-              <span :class="statutClass(f.statut)">{{ factureStatutLabel(f.statut) }}</span>
-            </td>
-            <td class="px-4 py-4 text-slate-700">{{ formatMontant(f.montant_total) }} FCFA</td>
-            <td class="px-4 py-4 font-semibold text-slate-900">{{ formatMontant(f.montant_restant) }} FCFA</td>
-            <td class="px-4 py-4 text-slate-600">
-              <div v-if="f.validee_le">Validée : {{ formatPatientDate(f.validee_le) }}</div>
-              <div v-if="f.payee_le">Payée : {{ formatPatientDate(f.payee_le) }}</div>
-            </td>
-            <td class="px-4 py-4">
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-if="f.payable_en_ligne"
-                  type="button"
-                  class="rounded-2xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                  @click="openPayment(f)"
-                >
-                  Payer en ligne
-                </button>
-                <button
-                  type="button"
-                  class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-                  :disabled="downloadingId === f.id"
-                  @click="downloadPdf(f)"
-                >
-                  PDF
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <PatientEmptyState
+      v-else-if="items.length === 0"
+      icon="🧾"
+      title="Aucune facture"
+      text="Vos documents de facturation apparaîtront ici lorsqu’ils seront disponibles."
+    />
+
+    <div v-else class="hc-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-emerald-50/80 text-teal-800">
+            <tr>
+              <th class="px-4 py-3 text-left font-bold">N° facture</th>
+              <th class="px-4 py-3 text-left font-bold">Statut</th>
+              <th class="px-4 py-3 text-left font-bold">Total</th>
+              <th class="px-4 py-3 text-left font-bold">Reste</th>
+              <th class="px-4 py-3 text-left font-bold">Dates</th>
+              <th class="px-4 py-3 text-left font-bold">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-50">
+            <tr v-for="f in items" :key="f.id" class="hover:bg-emerald-50/30">
+              <td class="px-4 py-4 font-mono text-xs text-slate-600">{{ f.numero_facture || '—' }}</td>
+              <td class="px-4 py-4">
+                <span class="hc-badge" :class="`hc-badge--${factureStatutMeta(f.statut).badge}`">
+                  {{ factureStatutMeta(f.statut).icon }} {{ factureStatutLabel(f.statut) }}
+                </span>
+              </td>
+              <td class="px-4 py-4 text-slate-700">{{ formatMontant(f.montant_total) }} FCFA</td>
+              <td class="px-4 py-4 font-semibold text-slate-900">{{ formatMontant(f.montant_restant) }} FCFA</td>
+              <td class="px-4 py-4 text-xs text-slate-600">
+                <div v-if="f.validee_le">Validée : {{ formatPatientDate(f.validee_le) }}</div>
+                <div v-if="f.payee_le">Payée : {{ formatPatientDate(f.payee_le) }}</div>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-if="f.payable_en_ligne"
+                    type="button"
+                    class="hc-btn-rdv !min-h-0 !px-3 !py-2 !text-sm"
+                    @click="openPayment(f)"
+                  >
+                    Payer en ligne
+                  </button>
+                  <button
+                    type="button"
+                    class="hc-btn-secondary"
+                    :disabled="downloadingId === f.id"
+                    @click="downloadFacture(f)"
+                  >
+                    Facture PDF
+                  </button>
+                  <button
+                    v-if="f.statut === 'payee' || f.statut === 'partiellement_payee'"
+                    type="button"
+                    class="hc-btn-secondary"
+                    :disabled="downloadingRecuId === f.id"
+                    @click="downloadRecu(f)"
+                  >
+                    {{ downloadingRecuId === f.id ? '…' : '📥 Reçu PDF' }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <PatientPaymentModal v-model:open="paymentOpen" :facture="selectedFacture" @success="onPaymentSuccess" />
@@ -64,7 +89,13 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import api, { downloadPdf as fetchPdf, getErrorMessage, unwrapList } from '../../api/client.js'
-import { factureStatutLabel, formatMontant, formatPatientDate } from '../../composables/usePatientPortal.js'
+import {
+  factureStatutLabel,
+  factureStatutMeta,
+  formatMontant,
+  formatPatientDate,
+} from '../../composables/usePatientPortal.js'
+import PatientEmptyState from '../../components/patient/PatientEmptyState.vue'
 import PatientPageHeader from '../../components/patient/PatientPageHeader.vue'
 import PatientPaymentModal from '../../components/patient/PatientPaymentModal.vue'
 
@@ -74,15 +105,9 @@ const loading = ref(true)
 const error = ref('')
 const message = ref('')
 const downloadingId = ref(null)
+const downloadingRecuId = ref(null)
 const paymentOpen = ref(false)
 const selectedFacture = ref(null)
-
-function statutClass(statut) {
-  const base = 'inline-flex rounded-full px-3 py-1 text-xs font-semibold'
-  if (statut === 'payee') return `${base} bg-emerald-100 text-emerald-700`
-  if (statut === 'partiellement_payee') return `${base} bg-amber-100 text-amber-700`
-  return `${base} bg-slate-100 text-slate-700`
-}
 
 function openPayment(facture) {
   selectedFacture.value = facture
@@ -90,7 +115,7 @@ function openPayment(facture) {
 }
 
 async function onPaymentSuccess() {
-  message.value = 'Paiement enregistré avec succès.'
+  message.value = 'Merci — votre paiement a été enregistré 💙'
   paymentOpen.value = false
   selectedFacture.value = null
   await load()
@@ -109,7 +134,7 @@ async function load() {
   }
 }
 
-async function downloadPdf(f) {
+async function downloadFacture(f) {
   downloadingId.value = f.id
   message.value = ''
   error.value = ''
@@ -124,10 +149,25 @@ async function downloadPdf(f) {
   }
 }
 
+async function downloadRecu(f) {
+  downloadingRecuId.value = f.id
+  message.value = ''
+  error.value = ''
+  try {
+    const name = f.numero_facture ? `recu-${f.numero_facture}.pdf` : `recu-${f.id}.pdf`
+    await fetchPdf(`/facturation/factures/${f.id}/recu/`, name)
+    message.value = 'Reçu téléchargé avec succès.'
+  } catch (e) {
+    error.value = getErrorMessage(e)
+  } finally {
+    downloadingRecuId.value = null
+  }
+}
+
 onMounted(async () => {
   await load()
   if (route.query.payment === 'success') {
-    message.value = 'Merci — votre paiement a été traité.'
+    message.value = 'Merci — votre paiement a été traité 💙'
   }
 })
 </script>

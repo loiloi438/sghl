@@ -27,12 +27,12 @@ class FacturationError(Exception):
 
 
 def assert_comptable(user: User):
-    if user.role not in {Role.ADMIN, Role.COMPTABLE}:
+    if user.role not in {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE}:
         raise FacturationError('Seul un comptable peut effectuer cette action.', code='acces_refuse')
 
 
 def _assert_peut_payer_en_ligne(utilisateur: User, facture: Facture) -> None:
-    if utilisateur.role in {Role.ADMIN, Role.COMPTABLE}:
+    if utilisateur.role in {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE}:
         return
     if utilisateur.role != Role.PATIENT:
         raise FacturationError('Accès refusé.', code='acces_refuse')

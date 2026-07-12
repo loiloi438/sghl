@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/api_client.dart';
+import '../core/sghl_theme.dart';
 
 class PdfDownloadButton extends StatefulWidget {
   const PdfDownloadButton({
@@ -25,7 +26,10 @@ class _PdfDownloadButtonState extends State<PdfDownloadButton> {
       await widget.onDownload();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${widget.label} ouvert.')),
+        SnackBar(
+          content: Text('${widget.label} ouvert.'),
+          backgroundColor: SghlColors.humanCareTeal,
+        ),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -45,6 +49,12 @@ class _PdfDownloadButtonState extends State<PdfDownloadButton> {
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF065F46),
+        side: const BorderSide(color: Color(0xFF99F6E4)),
+        backgroundColor: const Color(0xFFECFDF5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      ),
       onPressed: _loading ? null : _handlePress,
       icon: _loading
           ? const SizedBox(

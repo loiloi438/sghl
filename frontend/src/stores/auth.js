@@ -7,6 +7,7 @@ import {
   DASHBOARD,
   FACTURATION_READ,
   FACTURATION_WRITE,
+  CAISSE_READ,
   hasRole,
   HOSPITALISATION_ADMIT,
   HOSPITALISATION_READ,
@@ -35,6 +36,7 @@ const HOME_ROUTE_BY_ROLE = {
   infirmier: 'rendez-vous',
   pharmacien: 'pharmacie',
   comptable: 'facturation',
+  secretaire: 'secretariat',
   biologiste: 'resultats-medicaux',
   patient: 'patient-home',
 }
@@ -77,6 +79,7 @@ export const useAuthStore = defineStore('auth', {
     canPharmacieRead: (state) => hasRole(state.user?.role, PHARMACIE_READ),
     canPharmacie: (state) => hasRole(state.user?.role, PHARMACIE_WRITE),
     canFacturationRead: (state) => hasRole(state.user?.role, FACTURATION_READ),
+    canCaisse: (state) => hasRole(state.user?.role, CAISSE_READ),
     canFacturation: (state) => hasRole(state.user?.role, FACTURATION_WRITE),
     canRdvRead: (state) => hasRole(state.user?.role, RDV_READ),
     canRdv: (state) => hasRole(state.user?.role, RDV_GESTION),

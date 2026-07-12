@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import {
   ASSURANCE,
   AUDIT,
+  CAISSE_READ,
   DOCUMENTS,
   FACTURATION_READ,
   FORMATION_RH,
@@ -22,12 +23,14 @@ import {
   SERVICES_MEDICAUX,
   SOINS_WRITE,
   STATISTIQUES,
+  DASHBOARD,
   STAFF_ROLES,
   TELECONSULTATION,
   URGENCES,
 } from '../permissions.js'
 import { useAuthStore } from '../stores/auth.js'
 import { showAccessDenied } from '../composables/useToast.js'
+import { setPortalTheme } from '../composables/useTheme.js'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -68,6 +71,12 @@ const router = createRouter({
           meta: { title: 'Mon espace', patientOnly: true },
         },
         {
+          path: 'hospitalisations',
+          name: 'patient-hospitalisations',
+          component: () => import('../views/patient/PatientHospitalisationsView.vue'),
+          meta: { title: 'Hospitalisation', patientOnly: true },
+        },
+        {
           path: 'rendez-vous',
           name: 'patient-rendez-vous',
           component: () => import('../views/patient/PatientRendezVousView.vue'),
@@ -77,13 +86,13 @@ const router = createRouter({
           path: 'soins',
           name: 'patient-soins',
           component: () => import('../views/patient/PatientSoinsView.vue'),
-          meta: { title: 'Suivi des soins', patientOnly: true },
+          meta: { title: 'Soins infirmiers', patientOnly: true },
         },
         {
           path: 'prescriptions',
           name: 'patient-prescriptions',
           component: () => import('../views/patient/PatientPrescriptionsView.vue'),
-          meta: { title: 'Mes prescriptions', patientOnly: true },
+          meta: { title: 'Pharmacie', patientOnly: true },
         },
         {
           path: 'laboratoire',
@@ -104,6 +113,12 @@ const router = createRouter({
           meta: { title: 'Notifications', patientOnly: true },
         },
         {
+          path: 'messages',
+          name: 'patient-messages',
+          component: () => import('../views/patient/PatientMessagerieView.vue'),
+          meta: { title: 'Messagerie', patientOnly: true },
+        },
+        {
           path: 'profil',
           name: 'patient-profil',
           component: () => import('../views/patient/PatientProfilView.vue'),
@@ -120,7 +135,7 @@ const router = createRouter({
           path: '',
           name: 'dashboard',
           component: () => import('../views/DashboardView.vue'),
-          meta: { title: 'Tableau de bord', roles: STAFF_ROLES },
+          meta: { title: 'Tableau de bord', roles: DASHBOARD },
         },
         {
           path: 'profil',
@@ -144,6 +159,12 @@ const router = createRouter({
           name: 'patient-detail',
           component: () => import('../views/PatientDetailView.vue'),
           meta: { title: 'Fiche patient', roles: PATIENTS_READ },
+        },
+        {
+          path: 'secretariat',
+          name: 'secretariat',
+          component: () => import('../views/SecretariatView.vue'),
+          meta: { title: 'Secrétariat', roles: ['admin', 'secretaire'] },
         },
         {
           path: 'rendez-vous',
@@ -184,6 +205,12 @@ const router = createRouter({
           name: 'pharmacie',
           component: () => import('../views/PharmacieView.vue'),
           meta: { title: 'Pharmacie', roles: PHARMACIE_READ },
+        },
+        {
+          path: 'caisse',
+          name: 'caisse',
+          component: () => import('../views/CaisseView.vue'),
+          meta: { title: 'Caisse & Secrétariat', roles: CAISSE_READ },
         },
         {
           path: 'facturation',
@@ -272,6 +299,17 @@ const router = createRouter({
             subtitle: 'Archivage et partage sécurisé',
             icon: 'billing',
             roles: DOCUMENTS,
+          },
+        },
+        {
+          path: 'messagerie',
+          name: 'messagerie',
+          component: () => import('../views/MessagerieView.vue'),
+          meta: {
+            title: 'Messagerie interne',
+            subtitle: 'Échanges patients ↔ secrétariat / médecins',
+            icon: 'care',
+            roles: STAFF_ROLES,
           },
         },
         {
@@ -370,6 +408,12 @@ router.beforeEach(async (to) => {
   if (to.meta.roles && auth.user && !to.meta.roles.includes(auth.user.role)) {
     showAccessDenied()
     return { name: auth.homeRoute }
+  }
+
+  if (to.meta.patientOnly || to.path.startsWith('/patient') || to.name === 'validate-account') {
+    setPortalTheme('patient')
+  } else if (to.meta.staffOnly || (auth.isStaff && !to.meta.public)) {
+    setPortalTheme('staff')
   }
 
   return true

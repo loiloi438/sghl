@@ -10,6 +10,7 @@ from ninja.errors import HttpError
 from accounts.models import Role, User
 from api.v1.auth_backend import JWTAuth
 from audit.services import get_client_ip, log_audit
+from documents.pdf_builder import build_recu_pdf
 from documents.services import (
     DocumentError,
     lire_contenu_pdf,
@@ -18,7 +19,7 @@ from documents.services import (
     obtenir_pdf_ordonnance,
     verifier_document,
 )
-from facturation.models import Facture
+from facturation.models import Facture, StatutFacture
 from laboratoire.models import CommandeAnalyse
 from patients.models import Patient
 from prescriptions.models import Prescription
@@ -168,7 +169,7 @@ def list_documents(request, search: str | None = None, type_document: str | None
 
 @router.get('/facturation/factures/{facture_id}/pdf/', auth=jwt_auth)
 def telecharger_facture_pdf(request, facture_id: UUID):
-    roles_ok = {Role.ADMIN, Role.COMPTABLE, Role.MEDECIN, Role.PATIENT}
+    roles_ok = {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE, Role.MEDECIN, Role.PATIENT}
     if request.auth.role not in roles_ok:
         raise HttpError(403, 'Accès refusé.')
     try:
@@ -190,6 +191,34 @@ def telecharger_facture_pdf(request, facture_id: UUID):
         ip_address=get_client_ip(request),
     )
     filename = f'{facture.numero_facture or facture_id}.pdf'
+    return _pdf_response(content, filename)
+
+
+@router.get('/facturation/factures/{facture_id}/recu/', auth=jwt_auth)
+def telecharger_recu_pdf(request, facture_id: UUID):
+    roles_ok = {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE, Role.MEDECIN, Role.PATIENT}
+    if request.auth.role not in roles_ok:
+        raise HttpError(403, 'Accès refusé.')
+    try:
+        facture = Facture.objects.select_related('hospitalisation__patient', 'validee_par').get(
+            id=facture_id,
+        )
+        _check_patient_access(request.auth, facture.hospitalisation.patient_id)
+    except Facture.DoesNotExist:
+        raise HttpError(404, 'Facture introuvable.')
+    if facture.statut not in {StatutFacture.PAYEE, StatutFacture.PARTIELLEMENT_PAYEE}:
+        raise HttpError(400, 'Reçu disponible uniquement après un paiement enregistré.')
+    doc_ref = f'RECU-{facture.numero_facture or facture_id}'
+    content = build_recu_pdf(facture, doc_ref=doc_ref)
+    log_audit(
+        user=request.auth,
+        action='READ',
+        model_name='Facture',
+        object_id=facture.id,
+        new_value={'type': 'recu', 'facture_id': str(facture_id)},
+        ip_address=get_client_ip(request),
+    )
+    filename = f'recu-{facture.numero_facture or facture_id}.pdf'
     return _pdf_response(content, filename)
 
 

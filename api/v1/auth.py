@@ -9,7 +9,13 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from accounts.emails import notifier_mfa_active, notifier_mfa_code
-from accounts.jwt_service import login_user, revoke_refresh_token, rotate_refresh_token
+from accounts.jwt_service import (
+    create_access_token,
+    create_refresh_token,
+    login_user,
+    revoke_refresh_token,
+    rotate_refresh_token,
+)
 from accounts.mfa_service import generate_secret, provisioning_uri, verify_totp
 from core.email_utils import is_otp_production
 from django.utils.crypto import get_random_string
@@ -308,23 +314,37 @@ class ValidateAccountIn(Schema):
     code: str
 
 
-@router.post('/auth/validate/', response=MessageOut)
+class ValidateAccountOut(Schema):
+    detail: str
+    access_token: str
+    refresh_token: str
+    token_type: str = 'Bearer'
+
+
+@router.post('/auth/validate/', response=ValidateAccountOut)
 def validate_account(request, payload: ValidateAccountIn):
     try:
         user = verifier_code_validation(username=payload.username, code=payload.code)
     except InscriptionPatientError as exc:
         raise HttpError(exc.status, exc.message) from exc
 
-    # We don't require immediate login here; simply inform client.
+    ip = get_client_ip(request)
+    clear_login_failures(ip, payload.username)
+    access = create_access_token(user)
+    refresh = create_refresh_token(user)
     log_audit(
         user=user,
         action='UPDATE',
         model_name='User',
         object_id=user.id,
         new_value={'event': 'account_validated'},
-        ip_address=get_client_ip(request),
+        ip_address=ip,
     )
-    return MessageOut(detail='Compte activé. Vous pouvez vous connecter.')
+    return ValidateAccountOut(
+        detail='Compte activé. Bienvenue dans votre espace patient.',
+        access_token=access,
+        refresh_token=refresh,
+    )
 
 
 class ResendValidationIn(Schema):

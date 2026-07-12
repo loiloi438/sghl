@@ -1,12 +1,12 @@
 <template>
-  <div class="patient-layout">
+  <div class="patient-layout patient-portal">
     <header class="patient-header">
       <div class="patient-header-inner">
         <RouterLink to="/patient" class="brand-link">
           <span class="brand-icon">+</span>
           <span>
             <strong>SGHL</strong>
-            <small>Espace patient</small>
+            <small>Pour votre santé et bien-être</small>
           </span>
         </RouterLink>
         <button
@@ -143,6 +143,7 @@ onUnmounted(() => {
 .brand-link strong {
   display: block;
   font-size: 1rem;
+  font-family: 'Poppins', 'Nunito', sans-serif;
 }
 
 .brand-link small {
@@ -154,8 +155,8 @@ onUnmounted(() => {
 .brand-icon {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
-  background: var(--color-primary);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6ee7b7, #38bdf8);
   color: white;
   display: flex;
   align-items: center;

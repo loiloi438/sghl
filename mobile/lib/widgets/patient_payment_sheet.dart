@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/api_client.dart';
+import '../core/sghl_theme.dart';
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
+import 'human_care_widgets.dart';
 
 enum _PaymentStep { choose, pending, stripePending }
 
@@ -16,7 +18,11 @@ Future<bool?> showPatientPaymentSheet(
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    builder: (ctx) => PatientPaymentSheet(facture: facture),
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => Theme(
+      data: SghlTheme.patientHumanCare(),
+      child: PatientPaymentSheet(facture: facture),
+    ),
   );
 }
 
@@ -151,18 +157,36 @@ class _PatientPaymentSheetState extends State<PatientPaymentSheet> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Payer en ligne', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(
-            'Facture ${widget.facture.numeroFacture ?? '—'} — '
-            '${_formatMontant(widget.facture.montantRestant)} FCFA restants',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFA7F3D0)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '🌿 Payer en ligne',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Facture ${widget.facture.numeroFacture ?? '—'}',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: SghlColors.humanCareText,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_formatMontant(widget.facture.montantRestant)} FCFA restants',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
           if (_error != null) ...[
             _Banner(text: _error!, color: Theme.of(context).colorScheme.errorContainer),
             const SizedBox(height: 12),
@@ -175,13 +199,13 @@ class _PatientPaymentSheetState extends State<PatientPaymentSheet> {
             const SizedBox(height: 12),
           ],
           if (_message != null)
-            FilledButton(
+            SghlHumanCareButton(
+              label: 'Fermer',
               onPressed: () => _close(success: true),
-              child: const Text('Fermer'),
             )
           else if (_step == _PaymentStep.choose) ...[
             DropdownButtonFormField<String>(
-              value: _provider,
+              initialValue: _provider,
               decoration: const InputDecoration(labelText: 'Mode de paiement'),
               items: _providers.entries
                   .map(
@@ -205,11 +229,11 @@ class _PatientPaymentSheetState extends State<PatientPaymentSheet> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton(
+                  child: SghlHumanCareButton(
+                    label: _processing ? 'Initialisation…' : 'Continuer',
+                    loading: _processing,
+                    compact: true,
                     onPressed: _processing ? null : _initiate,
-                    child: Text(
-                      _processing ? 'Initialisation…' : 'Continuer',
-                    ),
                   ),
                 ),
               ],
@@ -276,7 +300,9 @@ class _PatientPaymentSheetState extends State<PatientPaymentSheet> {
               ],
             ),
           ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -294,7 +320,8 @@ class _Banner extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Text(text),
     );

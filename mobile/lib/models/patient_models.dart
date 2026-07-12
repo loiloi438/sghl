@@ -78,6 +78,9 @@ class HospitalisationResume {
     required this.serviceCode,
     required this.batimentCode,
     this.dateSortiePrevue,
+    this.dateSortieEffective,
+    this.serviceNom = '',
+    this.medecinNom = '',
   });
 
   factory HospitalisationResume.fromJson(Map<String, dynamic>? json) {
@@ -89,11 +92,14 @@ class HospitalisationResume {
       motifAdmission: json['motif_admission'] as String? ?? '',
       dateAdmission: json['date_admission'] as String? ?? '',
       dateSortiePrevue: json['date_sortie_prevue'] as String?,
+      dateSortieEffective: json['date_sortie_effective'] as String?,
       statut: json['statut'] as String? ?? '',
       litNumero: json['lit_numero'] as String? ?? '',
       chambreNumero: json['chambre_numero'] as String? ?? '',
       serviceCode: json['service_code'] as String? ?? '',
       batimentCode: json['batiment_code'] as String? ?? '',
+      serviceNom: json['service_nom'] as String? ?? '',
+      medecinNom: json['medecin_nom'] as String? ?? '',
     );
   }
 
@@ -101,11 +107,63 @@ class HospitalisationResume {
   final String motifAdmission;
   final String dateAdmission;
   final String? dateSortiePrevue;
+  final String? dateSortieEffective;
   final String statut;
   final String litNumero;
   final String chambreNumero;
   final String serviceCode;
   final String batimentCode;
+  final String serviceNom;
+  final String medecinNom;
+
+  bool get isActive => statut == 'active';
+
+  String get statutLabel {
+    switch (statut) {
+      case 'active':
+        return 'En cours';
+      case 'terminee':
+        return 'Terminée';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return statut;
+    }
+  }
+}
+
+class PatientMessage {
+  PatientMessage({
+    required this.id,
+    required this.sujet,
+    required this.corps,
+    required this.sens,
+    required this.expediteurNom,
+    required this.createdAt,
+    this.lu = false,
+  });
+
+  factory PatientMessage.fromJson(Map<String, dynamic> json) {
+    return PatientMessage(
+      id: json['id']?.toString() ?? '',
+      sujet: json['sujet'] as String? ?? '',
+      corps: json['corps'] as String? ?? '',
+      sens: json['sens'] as String? ?? 'recu',
+      expediteurNom: json['expediteur_nom'] as String? ?? '',
+      createdAt: json['created_at'] as String? ?? '',
+      lu: json['lu'] as bool? ?? false,
+    );
+  }
+
+  final String id;
+  final String sujet;
+  final String corps;
+  final String sens;
+  final String expediteurNom;
+  final String createdAt;
+  final bool lu;
+
+  bool get isReceived => sens == 'recu';
 }
 
 class ConstanteVitale {
@@ -199,6 +257,7 @@ class PrescriptionPatient {
   PrescriptionPatient({
     required this.id,
     required this.statut,
+    this.statutPharmacie = 'en_attente',
     required this.medecinNom,
     this.valideeLe,
     required this.diagnostics,
@@ -209,6 +268,7 @@ class PrescriptionPatient {
     return PrescriptionPatient(
       id: json['id']?.toString() ?? '',
       statut: json['statut'] as String? ?? '',
+      statutPharmacie: json['statut_pharmacie'] as String? ?? 'en_attente',
       medecinNom: json['medecin_nom'] as String? ?? '',
       valideeLe: json['validee_le'] as String?,
       diagnostics: (json['diagnostics'] as List<dynamic>? ?? []).cast<String>(),
@@ -218,10 +278,23 @@ class PrescriptionPatient {
 
   final String id;
   final String statut;
+  final String statutPharmacie;
   final String medecinNom;
   final String? valideeLe;
   final List<String> diagnostics;
   final List<String> medicaments;
+
+  String get statutPharmacieLabel {
+    switch (statutPharmacie) {
+      case 'validee':
+        return 'Validée pharmacie';
+      case 'retiree':
+        return 'Retirée';
+      case 'en_attente':
+      default:
+        return 'En attente pharmacie';
+    }
+  }
 }
 
 class ResultatLaboPatient {
@@ -375,6 +448,26 @@ class PatientRegisterResult {
   final String? devValidationCode;
 }
 
+class ValidateAccountResult {
+  ValidateAccountResult({
+    required this.detail,
+    required this.accessToken,
+    required this.refreshToken,
+  });
+
+  factory ValidateAccountResult.fromJson(Map<String, dynamic> json) {
+    return ValidateAccountResult(
+      detail: json['detail'] as String? ?? 'Compte activé.',
+      accessToken: json['access_token'] as String? ?? '',
+      refreshToken: json['refresh_token'] as String? ?? '',
+    );
+  }
+
+  final String detail;
+  final String accessToken;
+  final String refreshToken;
+}
+
 class MedecinDispo {
   MedecinDispo({required this.id, required this.nom});
 
@@ -435,7 +528,7 @@ class RendezVousPatient {
       case 'planifie':
         return 'Planifié';
       case 'confirme':
-        return 'Confirmé';
+        return 'Validé';
       case 'annule':
         return 'Annulé';
       case 'termine':
@@ -454,6 +547,8 @@ class TableauBord {
     this.hospitalisationActive,
     required this.prochainesDoses,
     required this.constantesRecentes,
+    this.prochainsRdv = const [],
+    this.messageBienveillance = '',
   });
 
   factory TableauBord.fromJson(Map<String, dynamic> json) {
@@ -470,6 +565,10 @@ class TableauBord {
       constantesRecentes: (json['constantes_recentes'] as List<dynamic>)
           .map((e) => ConstanteVitale.fromJson(e as Map<String, dynamic>))
           .toList(),
+      prochainsRdv: (json['prochains_rdv'] as List<dynamic>? ?? [])
+          .map((e) => RendezVousPatient.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      messageBienveillance: json['message_bienveillance'] as String? ?? '',
     );
   }
 
@@ -477,6 +576,8 @@ class TableauBord {
   final HospitalisationResume? hospitalisationActive;
   final List<DoseMedicament> prochainesDoses;
   final List<ConstanteVitale> constantesRecentes;
+  final List<RendezVousPatient> prochainsRdv;
+  final String messageBienveillance;
 }
 
 class PatientNotification {

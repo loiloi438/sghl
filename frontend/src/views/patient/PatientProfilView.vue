@@ -1,40 +1,44 @@
 <template>
-  <div class="space-y-6">
-    <PatientPageHeader title="Mon profil" subtitle="Coordonnées utilisées pour les confirmations et rappels" :loading="loading" @refresh="load" />
+  <div class="hc-page">
+    <PatientPageHeader
+      title="Mon profil"
+      subtitle="Vos coordonnées pour les confirmations, rappels et soins 💙"
+      module="profile"
+      :loading="loading"
+      @refresh="load"
+    />
 
-    <div v-if="message" class="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ message }}</div>
-    <div v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ error }}</div>
+    <div v-if="message" class="hc-alert hc-alert--success">{{ message }}</div>
+    <div v-if="error" class="hc-alert hc-alert--error">{{ error }}</div>
+    <div v-if="loading" class="hc-loading">Chargement de votre profil…</div>
 
-    <div v-if="loading" class="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">Chargement…</div>
-
-    <form v-else-if="profil" class="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" @submit.prevent="save">
-      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <h2 class="text-lg font-semibold text-slate-900">{{ profil.prenom }} {{ profil.nom }}</h2>
+    <form v-else-if="profil" class="hc-card hc-card-padded space-y-6" @submit.prevent="save">
+      <div class="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5">
+        <h2 class="text-xl font-bold text-teal-950" style="font-family: Poppins, sans-serif">
+          {{ profil.prenom }} {{ profil.nom }}
+        </h2>
         <p class="mt-1 text-sm text-slate-500">Dossier {{ profil.numero_dossier }}</p>
         <p class="mt-2 text-sm text-slate-600">
-          Né(e) le {{ profil.date_naissance }} · {{ profil.sexe === 'M' ? 'Homme' : profil.sexe === 'F' ? 'Femme' : profil.sexe }}
+          Né(e) le {{ profil.date_naissance }} ·
+          {{ profil.sexe === 'M' ? 'Homme' : profil.sexe === 'F' ? 'Femme' : profil.sexe }}
         </p>
       </div>
 
       <label class="grid gap-2 text-sm text-slate-700">
-        <span>Adresse e-mail</span>
-        <input v-model="form.email" type="email" required class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400" />
+        <span class="font-semibold">Adresse e-mail</span>
+        <input v-model="form.email" type="email" required class="hc-input a11y-touch" />
       </label>
       <label class="grid gap-2 text-sm text-slate-700">
-        <span>Téléphone</span>
-        <input v-model="form.telephone" type="tel" required class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400" />
+        <span class="font-semibold">Téléphone</span>
+        <input v-model="form.telephone" type="tel" required class="hc-input a11y-touch" />
       </label>
       <label class="grid gap-2 text-sm text-slate-700">
-        <span>Adresse postale</span>
-        <textarea v-model="form.adresse" rows="3" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400" />
+        <span class="font-semibold">Adresse postale</span>
+        <textarea v-model="form.adresse" rows="3" class="hc-input a11y-touch" />
       </label>
 
-      <button
-        type="submit"
-        class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-        :disabled="saving"
-      >
-        {{ saving ? 'Enregistrement…' : 'Enregistrer les modifications' }}
+      <button type="submit" class="hc-btn-rdv a11y-touch" :disabled="saving">
+        {{ saving ? 'Enregistrement…' : '💾 Enregistrer les modifications' }}
       </button>
     </form>
   </div>
@@ -77,7 +81,7 @@ async function save() {
   try {
     const { data } = await api.patch('/patient/profil/', form.value)
     profil.value = data
-    message.value = 'Profil mis à jour.'
+    message.value = 'Profil mis à jour — merci de veiller à vos informations 💙'
   } catch (e) {
     error.value = getErrorMessage(e)
   } finally {

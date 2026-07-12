@@ -12,7 +12,7 @@ from payments.webhooks import verify_webhook_signature
 router = Router(tags=['Paiements'])
 jwt_auth = JWTAuth()
 
-ROLES_PAIEMENT = {Role.ADMIN, Role.COMPTABLE, Role.PATIENT}
+ROLES_PAIEMENT = {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE, Role.PATIENT}
 
 
 class CreatePaymentIn(Schema):

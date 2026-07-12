@@ -1,32 +1,47 @@
 <template>
-  <div class="space-y-6">
-    <PatientPageHeader title="Notifications" :subtitle="unreadCount ? `${unreadCount} non lue(s)` : 'Tout est à jour'" :loading="loading" @refresh="load" />
+  <div class="hc-page">
+    <PatientPageHeader
+      title="Notifications"
+      :subtitle="unreadCount ? `${unreadCount} message(s) à lire` : 'Tout est à jour — bonne journée 💙'"
+      module="notification"
+      :loading="loading"
+      @refresh="load"
+    />
 
-    <div v-if="error" class="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ error }}</div>
-    <div v-if="loading" class="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">Chargement…</div>
-    <div v-else-if="items.length === 0" class="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">Aucune notification pour le moment.</div>
+    <div v-if="error" class="hc-alert hc-alert--error">{{ error }}</div>
+    <div v-if="loading" class="hc-loading">Chargement…</div>
+
+    <PatientEmptyState
+      v-else-if="items.length === 0"
+      icon="🔔"
+      title="Aucune notification"
+      text="Les rappels de rendez-vous et messages du secrétariat apparaîtront ici."
+    />
 
     <div v-else class="space-y-3">
       <article
         v-for="n in items"
         :key="n.id"
-        class="rounded-3xl border p-5 shadow-sm transition"
-        :class="n.lu ? 'border-slate-200 bg-white' : 'border-sky-200 bg-sky-50'"
+        class="hc-list-item transition"
+        :class="n.lu ? '' : 'border-sky-200 bg-sky-50/60'"
       >
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div class="flex flex-wrap items-center gap-2">
-              <h2 class="font-semibold text-slate-900">{{ n.titre }}</h2>
-              <span v-if="!n.lu" class="rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Nouveau</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500">{{ n.categorie }}</span>
+          <div class="flex gap-3">
+            <span class="text-2xl">{{ notificationCategorieMeta(n.categorie).icon }}</span>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="font-bold text-slate-900">{{ n.titre }}</h2>
+                <span v-if="!n.lu" class="hc-badge hc-badge--pending">Nouveau</span>
+                <span class="hc-badge hc-badge--done">{{ notificationCategorieMeta(n.categorie).label }}</span>
+              </div>
+              <p class="mt-2 text-sm leading-relaxed text-slate-700">{{ n.corps }}</p>
+              <p class="mt-2 text-xs text-slate-500">{{ formatPatientDate(n.created_at) }}</p>
             </div>
-            <p class="mt-2 text-sm leading-6 text-slate-700">{{ n.corps }}</p>
-            <p class="mt-2 text-xs text-slate-500">{{ formatPatientDate(n.created_at) }}</p>
           </div>
           <button
             v-if="!n.lu"
             type="button"
-            class="shrink-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            class="hc-btn-secondary shrink-0"
             @click="markRead(n)"
           >
             Marquer comme lu
@@ -40,7 +55,8 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import api, { getErrorMessage, unwrapList } from '../../api/client.js'
-import { formatPatientDate } from '../../composables/usePatientPortal.js'
+import { formatPatientDate, notificationCategorieMeta } from '../../composables/usePatientPortal.js'
+import PatientEmptyState from '../../components/patient/PatientEmptyState.vue'
 import PatientPageHeader from '../../components/patient/PatientPageHeader.vue'
 
 const items = ref([])

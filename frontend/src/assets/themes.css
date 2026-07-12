@@ -1,0 +1,157 @@
+/* 🌿 Human-Care — portail patient */
+html[data-theme='human-care'] {
+  color-scheme: light;
+  --color-primary: #2dd4bf;
+  --color-primary-dark: #0d9488;
+  --color-primary-light: #ccfbf1;
+  --color-accent: #7dd3fc;
+  --color-accent-light: #e0f2fe;
+  --color-bg: #f0fdf9;
+  --color-bg-elevated: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #134e4a;
+  --color-text-secondary: #475569;
+  --color-muted: #64748b;
+  --color-border: #99f6e4;
+  --color-border-soft: #ecfdf5;
+  --color-navy: #115e59;
+  --radius: 1.25rem;
+  --radius-lg: 1.75rem;
+  --shadow: 0 8px 30px rgba(13, 148, 136, 0.08);
+  --focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.35);
+}
+
+html[data-theme='human-care'] body {
+  background:
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(125, 211, 252, 0.25), transparent 55%),
+    radial-gradient(ellipse 70% 40% at 100% 0%, rgba(45, 212, 191, 0.15), transparent 50%),
+    var(--color-bg);
+}
+
+html[data-theme='human-care'] .patient-layout {
+  background: var(--color-bg);
+}
+
+html[data-theme='human-care'] .patient-header {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+html[data-theme='human-care'] .nav-pill.router-link-active {
+  background: linear-gradient(135deg, #2dd4bf, #38bdf8);
+  color: #fff;
+}
+
+html[data-theme='human-care'] .btn-rdv-hero {
+  background: linear-gradient(135deg, #0d9488, #0891b2);
+  box-shadow: 0 12px 28px rgba(13, 148, 136, 0.35);
+  min-height: 3rem;
+  font-size: 1rem;
+}
+
+/* 🧬 Tech-Health — staff / admin */
+html[data-theme='tech-health'] {
+  color-scheme: dark;
+  --color-primary: #38bdf8;
+  --color-primary-dark: #0ea5e9;
+  --color-primary-light: rgba(56, 189, 248, 0.15);
+  --color-accent: #a78bfa;
+  --color-accent-light: rgba(167, 139, 250, 0.12);
+  --color-bg: #0b1220;
+  --color-bg-elevated: #111827;
+  --color-surface: rgba(30, 41, 59, 0.72);
+  --color-text: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-muted: #64748b;
+  --color-border: rgba(56, 189, 248, 0.22);
+  --color-border-soft: rgba(148, 163, 184, 0.12);
+  --color-navy: #1e293b;
+  --radius: 1rem;
+  --radius-lg: 1.5rem;
+  --shadow: 0 0 24px rgba(56, 189, 248, 0.08);
+  --focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.35);
+}
+
+html[data-theme='tech-health'] body {
+  background:
+    radial-gradient(ellipse 60% 40% at 10% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 90% 10%, rgba(167, 139, 250, 0.1), transparent 50%),
+    var(--color-bg);
+  color: var(--color-text);
+}
+
+html[data-theme='tech-health'] .layout {
+  background: var(--color-bg);
+}
+
+html[data-theme='tech-health'] .sidebar {
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  border-right: 1px solid var(--color-border);
+}
+
+html[data-theme='tech-health'] .topbar {
+  background: rgba(15, 23, 42, 0.85);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+}
+
+html[data-theme='tech-health'] .content {
+  color: var(--color-text);
+}
+
+html[data-theme='tech-health'] .glass-card {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 32px rgba(56, 189, 248, 0.06);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+}
+
+html[data-theme='tech-health'] .kpi-glow {
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+}
+
+html[data-theme='tech-health'] .tech-dashboard {
+  background: transparent;
+  color: var(--color-text);
+}
+
+html[data-theme='tech-health'] .tech-dashboard .bg-white,
+html[data-theme='tech-health'] .tech-dashboard .bg-slate-50 {
+  background: rgba(30, 41, 59, 0.72) !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+  color: var(--color-text) !important;
+}
+
+html[data-theme='tech-health'] .tech-dashboard .text-slate-900,
+html[data-theme='tech-health'] .tech-dashboard .text-slate-700 {
+  color: var(--color-text) !important;
+}
+
+html[data-theme='tech-health'] .tech-dashboard .text-slate-600,
+html[data-theme='tech-health'] .tech-dashboard .text-slate-500 {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Accessibilité renforcée */
+.a11y-touch {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.65rem 1.1rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 0.75rem 1.25rem;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 0.5rem;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}

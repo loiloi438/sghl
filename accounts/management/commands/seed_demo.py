@@ -20,6 +20,93 @@ from hospitalisation.services import admettre_patient
 class Command(BaseCommand):
     help = 'Crée des données de démonstration (logistique + patient test).'
 
+    STAFF_PASSWORDS = {
+        Role.MEDECIN: 'Medecin@SGHL2026',
+        Role.INFIRMIER: 'Infirmier@SGHL2026',
+        Role.BIOLOGISTE: 'Biologiste@SGHL2026',
+        Role.PHARMACIEN: 'Pharmacien@SGHL2026',
+        Role.COMPTABLE: 'Comptable@SGHL2026',
+        Role.SECRETAIRE: 'Secretaire@SGHL2026',
+    }
+
+    DEMO_MEDECINS = [
+        ('medecin', 'Jean-Philippe', 'Martin', 'medecin@sghl.local'),
+        ('medecin2', 'Nadia', 'Mbemba', 'nadia.mbemba@sghl.local'),
+        ('medecin3', 'Olivier', 'Kanza', 'olivier.kanza@sghl.local'),
+        ('medecin4', 'André', 'Moukoko', 'andre.moukoko@sghl.local'),
+        ('medecin5', 'Sylvie', 'Ngouabi', 'sylvie.ngouabi@sghl.local'),
+        ('medecin6', 'Patrick', 'Kimpwanza', 'patrick.kimpwanza@sghl.local'),
+        ('medecin7', 'Élodie', 'Makaya', 'elodie.makaya@sghl.local'),
+        ('medecin8', 'Bernard', 'Itoua', 'bernard.itoua@sghl.local'),
+        ('medecin9', 'Carine', 'Loumou', 'carine.loumou@sghl.local'),
+        ('medecin10', 'Fabrice', 'Ndongo', 'fabrice.ndongo@sghl.local'),
+    ]
+
+    DEMO_INFIRMIERS = [
+        ('infirmier', 'Antoinette', 'Bouity', 'infirmier@sghl.local'),
+        ('infirmier2', 'Sophie', 'Banza', 'sophie.banza@sghl.local'),
+        ('infirmier3', 'Jean-Pierre', 'Oko', 'jeanpierre.oko@sghl.local'),
+        ('infirmier4', 'Grace', 'Mavoungou', 'grace.mavoungou@sghl.local'),
+        ('infirmier5', 'Christian', 'Loemba', 'christian.loemba@sghl.local'),
+        ('infirmier6', 'Patricia', 'Nzouba', 'patricia.nzouba@sghl.local'),
+        ('infirmier7', 'Rodrigue', 'Massamba', 'rodrigue.massamba@sghl.local'),
+        ('infirmier8', 'Chantal', 'Bounkassa', 'chantal.bounkassa@sghl.local'),
+        ('infirmier9', 'Serge', 'Makaya', 'serge.makaya@sghl.local'),
+        ('infirmier10', 'Hortense', 'Mounguengui', 'hortense.mounguengui@sghl.local'),
+    ]
+
+    DEMO_BIOLOGISTES = [
+        ('biologiste', 'Marie', 'Nkounkou', 'biologiste@sghl.local'),
+        ('biologiste2', 'Joseph', 'Mboussi', 'joseph.mboussi@sghl.local'),
+        ('biologiste3', 'Alice', 'Kombo', 'alice.kombo@sghl.local'),
+    ]
+
+    DEMO_PHARMACIENS = [
+        ('pharmacien', 'Paul', 'Mabiala', 'pharmacien@sghl.local'),
+        ('pharmacien2', 'Diane', 'Okoko', 'diane.okoko@sghl.local'),
+        ('pharmacien3', 'Samuel', "N'Goma", 'samuel.ngoma@sghl.local'),
+    ]
+
+    DEMO_COMPTABLES = [
+        ('comptable', 'Sylvie', 'Ngoma', 'comptable@sghl.local'),
+        ('comptable2', 'Mélanie', 'Bakala', 'melanie.bakala@sghl.local'),
+        ('comptable3', 'Roger', 'Itou', 'roger.itou@sghl.local'),
+    ]
+
+    DEMO_SECRETAIRES = [
+        ('samantha', 'Samantha', 'Turner', 'galoisturner@gmail.com'),
+    ]
+
+    def _ensure_staff(self, role: str, entries: list[tuple[str, str, str, str]]) -> list[User]:
+        password = self.STAFF_PASSWORDS[role]
+        created_count = 0
+        users: list[User] = []
+        for username, first_name, last_name, email in entries:
+            user, created = User.objects.update_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'role': role,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'is_active': True,
+                    'mfa_enabled': True,
+                },
+            )
+            if created:
+                user.set_password(password)
+                user.save()
+                created_count += 1
+            users.append(user)
+        role_label = dict(Role.choices).get(role, role)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'{len(entries)} {role_label.lower()}(s) démo — {created_count} créé(s), '
+                f'{len(entries) - created_count} mis à jour.'
+            )
+        )
+        return users
+
     def handle(self, *args, **options):
         if not settings.DEBUG and not env_flag('SGHL_SEED_DEMO'):
             raise CommandError(
@@ -82,131 +169,22 @@ class Command(BaseCommand):
             patient.save(update_fields=['compte_utilisateur'])
             self.stdout.write(self.style.SUCCESS('Profil patient rattaché au compte mobile.'))
 
-        medecin, created_med = User.objects.get_or_create(
-            username='medecin',
-            defaults={
-                'email': 'medecin@sghl.local',
-                'role': Role.MEDECIN,
-                'first_name': 'Jean',
-                'last_name': 'Okemba',
-            },
-        )
-        if created_med:
-            medecin.set_password('Medecin@SGHL2026')
-            medecin.save()
-            self.stdout.write(self.style.SUCCESS('Médecin créé : medecin / Medecin@SGHL2026'))
+        medecins = self._ensure_staff(Role.MEDECIN, self.DEMO_MEDECINS)
+        medecin = medecins[0]
 
-        medecin2, created_med2 = User.objects.get_or_create(
-            username='medecin2',
-            defaults={
-                'email': 'medecin2@sghl.local',
-                'role': Role.MEDECIN,
-                'first_name': 'Nadia',
-                'last_name': 'Mbemba',
-            },
-        )
-        if created_med2:
-            medecin2.set_password('Medecin@SGHL2026')
-            medecin2.save()
-            self.stdout.write(self.style.SUCCESS('Médecin créé : medecin2 / Medecin@SGHL2026'))
+        infirmiers = self._ensure_staff(Role.INFIRMIER, self.DEMO_INFIRMIERS)
+        infirmier = infirmiers[0]
 
-        medecin3, created_med3 = User.objects.get_or_create(
-            username='medecin3',
-            defaults={
-                'email': 'medecin3@sghl.local',
-                'role': Role.MEDECIN,
-                'first_name': 'Olivier',
-                'last_name': 'Kanza',
-            },
-        )
-        if created_med3:
-            medecin3.set_password('Medecin@SGHL2026')
-            medecin3.save()
-            self.stdout.write(self.style.SUCCESS('Médecin créé : medecin3 / Medecin@SGHL2026'))
+        biologistes = self._ensure_staff(Role.BIOLOGISTE, self.DEMO_BIOLOGISTES)
+        biologiste = biologistes[0]
 
-        infirmier, created_inf = User.objects.get_or_create(
-            username='infirmier',
-            defaults={
-                'email': 'infirmier@sghl.local',
-                'role': Role.INFIRMIER,
-                'first_name': 'Claire',
-                'last_name': 'Mavoungou',
-            },
-        )
-        if created_inf:
-            infirmier.set_password('Infirmier@SGHL2026')
-            infirmier.save()
-            self.stdout.write(self.style.SUCCESS('Infirmier créé : infirmier / Infirmier@SGHL2026'))
+        self._ensure_staff(Role.PHARMACIEN, self.DEMO_PHARMACIENS)
 
-        infirmier2, created_inf2 = User.objects.get_or_create(
-            username='infirmier2',
-            defaults={
-                'email': 'infirmier2@sghl.local',
-                'role': Role.INFIRMIER,
-                'first_name': 'Sophie',
-                'last_name': 'Banza',
-            },
-        )
-        if created_inf2:
-            infirmier2.set_password('Infirmier@SGHL2026')
-            infirmier2.save()
-            self.stdout.write(self.style.SUCCESS('Infirmier créé : infirmier2 / Infirmier@SGHL2026'))
+        comptables = self._ensure_staff(Role.COMPTABLE, self.DEMO_COMPTABLES)
+        comptable = comptables[0]
 
-        infirmier3, created_inf3 = User.objects.get_or_create(
-            username='infirmier3',
-            defaults={
-                'email': 'infirmier3@sghl.local',
-                'role': Role.INFIRMIER,
-                'first_name': 'Jean-Pierre',
-                'last_name': 'Oko',
-            },
-        )
-        if created_inf3:
-            infirmier3.set_password('Infirmier@SGHL2026')
-            infirmier3.save()
-            self.stdout.write(self.style.SUCCESS('Infirmier créé : infirmier3 / Infirmier@SGHL2026'))
-
-        biologiste, created_bio = User.objects.get_or_create(
-            username='biologiste',
-            defaults={
-                'email': 'biologiste@sghl.local',
-                'role': Role.BIOLOGISTE,
-                'first_name': 'Marie',
-                'last_name': 'Nkounkou',
-            },
-        )
-        if created_bio:
-            biologiste.set_password('Biologiste@SGHL2026')
-            biologiste.save()
-            self.stdout.write(self.style.SUCCESS('Biologiste créé : biologiste / Biologiste@SGHL2026'))
-
-        pharmacien, created_pharma = User.objects.get_or_create(
-            username='pharmacien',
-            defaults={
-                'email': 'pharmacien@sghl.local',
-                'role': Role.PHARMACIEN,
-                'first_name': 'Paul',
-                'last_name': 'Mabiala',
-            },
-        )
-        if created_pharma:
-            pharmacien.set_password('Pharmacien@SGHL2026')
-            pharmacien.save()
-            self.stdout.write(self.style.SUCCESS('Pharmacien créé : pharmacien / Pharmacien@SGHL2026'))
-
-        comptable, created_comptable = User.objects.get_or_create(
-            username='comptable',
-            defaults={
-                'email': 'comptable@sghl.local',
-                'role': Role.COMPTABLE,
-                'first_name': 'Sylvie',
-                'last_name': 'Ngoma',
-            },
-        )
-        if created_comptable:
-            comptable.set_password('Comptable@SGHL2026')
-            comptable.save()
-            self.stdout.write(self.style.SUCCESS('Comptable créé : comptable / Comptable@SGHL2026'))
+        secretaires = self._ensure_staff(Role.SECRETAIRE, self.DEMO_SECRETAIRES)
+        secretaire = secretaires[0]
 
         staff_ready = User.objects.exclude(role=Role.PATIENT).update(
             mfa_enabled=True,
@@ -375,9 +353,52 @@ class Command(BaseCommand):
             utilisateur=infirmier,
             titre='Nouvelle affectation de soins',
             defaults={
-                'corps': 'Vous avez été affecté(e) à la prise en charge de P-2026-001 demain.',
+                'corps': 'Vous avez été affectée à la prise en charge de P-2026-001 demain.',
                 'categorie': 'Soins',
                 'donnees': {'patient': 'P-2026-001', 'service': 'Médecine interne'},
+                'lu': False,
+            },
+        )
+
+        NotificationInbox.objects.get_or_create(
+            utilisateur=medecin,
+            titre='Alerte médicale — constantes',
+            defaults={
+                'corps': 'Patient P-2026-001 : fièvre 38,2°C. Surveillance renforcée recommandée.',
+                'categorie': 'Alerte médicale',
+                'donnees': {'patient': 'P-2026-001', 'niveau': 'urgent'},
+                'lu': False,
+            },
+        )
+
+        NotificationInbox.objects.get_or_create(
+            utilisateur=compte_patient,
+            titre='Rappel de rendez-vous',
+            defaults={
+                'corps': 'Votre rendez-vous avec le Dr Jean-Philippe Martin est prévu demain à 10h00.',
+                'categorie': 'Rendez-vous',
+                'donnees': {'type': 'rappel', 'medecin': 'Jean-Philippe Martin'},
+                'lu': False,
+            },
+        )
+
+        from messagerie.models import MessageInterne
+
+        MessageInterne.objects.get_or_create(
+            expediteur=compte_patient,
+            destinataire=secretaire,
+            sujet='Question facture hospitalisation',
+            defaults={
+                'corps': 'Bonjour, pourriez-vous m’indiquer le montant restant sur ma dernière facture ?',
+                'lu': False,
+            },
+        )
+        MessageInterne.objects.get_or_create(
+            expediteur=secretaire,
+            destinataire=compte_patient,
+            sujet='Réponse secrétariat — facture',
+            defaults={
+                'corps': 'Bonjour, votre facture P-2026-001 est validée. Le solde sera visible dans votre espace patient.',
                 'lu': False,
             },
         )

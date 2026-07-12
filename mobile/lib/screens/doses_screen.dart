@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
+import '../widgets/patient_human_care_page.dart';
 
 class DosesScreen extends StatefulWidget {
   const DosesScreen({super.key});
@@ -44,46 +45,53 @@ class _DosesScreenState extends State<DosesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Rappels médicamenteux')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _items.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: Text('Aucun médicament planifié')),
-                      ],
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _items.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final dose = _items[index];
-                        return Card(
-                          color: dose.estEnRetard
-                              ? Colors.orange.shade50
-                              : null,
-                          child: ListTile(
-                            leading: Icon(
-                              dose.estEnRetard
-                                  ? Icons.notifications_active_outlined
-                                  : Icons.medication_liquid_outlined,
-                              color: dose.estEnRetard ? Colors.orange.shade800 : null,
-                            ),
-                            title: Text(dose.medicament),
-                            subtitle: Text('${dose.posologie} — ${_formatDate(dose.heurePrevue)}'),
-                            trailing: dose.estEnRetard
-                                ? const Text('À prendre', style: TextStyle(color: Colors.orange))
-                                : null,
+    return PatientHcListPage(
+      title: 'Soins infirmiers',
+      subtitle: 'Planning de vos médicaments et soins',
+      loading: _loading,
+      onRefresh: _load,
+      emptyIcon: Icons.medication_outlined,
+      emptyTitle: 'Aucun soin planifié',
+      emptySubtitle: 'Votre infirmière vous informera dès qu\'un soin sera programmé.',
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final dose = _items[index];
+        return PatientHcCard(
+          highlight: dose.estEnRetard,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(dose.estEnRetard ? '⚠️' : '💉', style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            dose.medicament,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                        );
-                      },
+                        ),
+                        PatientHcBadge(
+                          label: dose.estEnRetard ? 'En retard' : dose.statut,
+                          tone: dose.estEnRetard ? PatientHcBadgeTone.alert : PatientHcBadgeTone.mint,
+                        ),
+                      ],
                     ),
-            ),
+                    const SizedBox(height: 4),
+                    Text(dose.posologie),
+                    const SizedBox(height: 4),
+                    Text('🕐 ${_formatDate(dose.heurePrevue)}', style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -63,11 +63,14 @@ class HospitalisationResumeOut(Schema):
     motif_admission: str
     date_admission: datetime
     date_sortie_prevue: Optional[date]
+    date_sortie_effective: Optional[datetime] = None
     statut: str
     lit_numero: str
     chambre_numero: str
     service_code: str
+    service_nom: str = ''
     batiment_code: str
+    medecin_nom: str = ''
 
 
 class ConstanteVitaleOut(Schema):
@@ -77,7 +80,9 @@ class ConstanteVitaleOut(Schema):
     tension_diastolique: Optional[int]
     frequence_cardiaque: Optional[int]
     saturation_o2: Optional[int]
+    glycemie: Optional[float] = None
     mesure_le: datetime
+    infirmier_nom: str = ''
 
 
 class PlanSoinsOut(Schema):
@@ -86,6 +91,7 @@ class PlanSoinsOut(Schema):
     description: str
     statut: str
     date_debut: datetime
+    infirmier_nom: str = ''
 
 
 class DoseOut(Schema):
@@ -95,11 +101,13 @@ class DoseOut(Schema):
     heure_prevue: datetime
     statut: str
     est_en_retard: bool
+    infirmier_nom: str = ''
 
 
 class PrescriptionPatientOut(Schema):
     id: UUID
     statut: str
+    statut_pharmacie: str = 'en_attente'
     medecin_nom: str
     validee_le: Optional[datetime]
     diagnostics: list[str]
@@ -183,6 +191,29 @@ class TableauBordOut(Schema):
     hospitalisation_active: Optional[HospitalisationResumeOut]
     prochaines_doses: list[DoseOut]
     constantes_recentes: list[ConstanteVitaleOut]
+    prochains_rdv: list[RendezVousPatientOut] = []
+    message_bienveillance: str = ''
+
+
+def _pharmacie_statut(prescription: Prescription) -> str:
+    if prescription.statut == StatutPrescription.BROUILLON:
+        return 'en_attente'
+    if prescription.statut == StatutPrescription.ANNULEE:
+        return 'annulee'
+    ordre = getattr(prescription, 'ordre_dispensation', None)
+    if ordre is not None:
+        if ordre.statut == 'dispense':
+            return 'retiree'
+        return 'validee'
+    if prescription.statut == StatutPrescription.VALIDEE:
+        return 'validee'
+    return 'en_attente'
+
+
+def _user_label(user) -> str:
+    if user is None:
+        return '—'
+    return f'{user.first_name} {user.last_name}'.strip() or user.username
 
 
 def _serialize_profil(p: Patient) -> PatientProfilOut:
@@ -226,16 +257,20 @@ def _apply_coordonnees_patient(patient: Patient, *, email: str, email_confirm: s
 
 def _serialize_hospitalisation(h: Hospitalisation) -> HospitalisationResumeOut:
     lit = h.lit
+    service = lit.chambre.service
     return HospitalisationResumeOut(
         id=h.id,
         motif_admission=h.motif_admission,
         date_admission=h.date_admission,
         date_sortie_prevue=h.date_sortie_prevue,
+        date_sortie_effective=h.date_sortie_effective,
         statut=h.statut,
         lit_numero=lit.numero,
         chambre_numero=lit.chambre.numero,
-        service_code=lit.chambre.service.code,
-        batiment_code=lit.chambre.service.batiment.code,
+        service_code=service.code,
+        service_nom=service.nom,
+        batiment_code=service.batiment.code,
+        medecin_nom=_user_label(h.medecin_referent),
     )
 
 
@@ -247,7 +282,9 @@ def _serialize_constante(c: ConstanteVitale) -> ConstanteVitaleOut:
         tension_diastolique=c.tension_diastolique,
         frequence_cardiaque=c.frequence_cardiaque,
         saturation_o2=c.saturation_o2,
+        glycemie=float(c.glycemie) if c.glycemie is not None else None,
         mesure_le=c.mesure_le,
+        infirmier_nom=_user_label(c.infirmier),
     )
 
 
@@ -259,6 +296,7 @@ def _serialize_dose(d: DosePlanifiee) -> DoseOut:
         heure_prevue=d.heure_prevue,
         statut=d.statut,
         est_en_retard=d.est_en_retard,
+        infirmier_nom=_user_label(d.infirmier),
     )
 
 
@@ -294,7 +332,7 @@ def tableau_de_bord(request):
 
     hospitalisation = (
         Hospitalisation.objects.filter(patient=patient, statut=StatutHospitalisation.ACTIVE)
-        .select_related('lit__chambre__service__batiment')
+        .select_related('lit__chambre__service__batiment', 'medecin_referent')
         .first()
     )
 
@@ -302,6 +340,11 @@ def tableau_de_bord(request):
 
     constantes = []
     prochaines_doses = []
+    prochains_rdv = list(
+        RendezVous.objects.filter(patient=patient)
+        .select_related('medecin')
+        .order_by('date_heure')[:3]
+    )
     if hospitalisation:
         constantes = [
             _serialize_constante(c)
@@ -316,19 +359,39 @@ def tableau_de_bord(request):
             ).order_by('heure_prevue')[:10]
         ]
 
+    if hospitalisation:
+        message = 'Nous veillons sur vous avec attention 💙'
+    elif prochains_rdv:
+        message = 'Votre prochain rendez-vous est planifié — vous êtes entre de bonnes mains 💙'
+    else:
+        message = 'Vous êtes en bonne santé 💙 — prenez soin de vous au quotidien.'
+
     return TableauBordOut(
         profil=_serialize_profil(patient),
         hospitalisation_active=hosp_out,
         prochaines_doses=prochaines_doses,
         constantes_recentes=constantes,
+        prochains_rdv=[_serialize_rdv_patient(r) for r in prochains_rdv],
+        message_bienveillance=message,
     )
+
+
+@router.get('/patient/hospitalisations/', response=list[HospitalisationResumeOut], auth=jwt_auth)
+def hospitalisations_patient(request):
+    patient = _require_patient(request.auth)
+    qs = (
+        Hospitalisation.objects.filter(patient=patient)
+        .select_related('lit__chambre__service__batiment', 'medecin_referent')
+        .order_by('-date_admission')
+    )
+    return [_serialize_hospitalisation(h) for h in qs]
 
 
 @router.get('/patient/constantes-vitales/', response=list[ConstanteVitaleOut], auth=jwt_auth)
 @paginate
 def historique_constantes(request):
     patient = _require_patient(request.auth)
-    qs = ConstanteVitale.objects.filter(hospitalisation__patient=patient).order_by('-mesure_le')
+    qs = ConstanteVitale.objects.filter(hospitalisation__patient=patient).select_related('infirmier').order_by('-mesure_le')
     return [_serialize_constante(c) for c in qs]
 
 
@@ -336,7 +399,7 @@ def historique_constantes(request):
 @paginate
 def plans_soins_patient(request):
     patient = _require_patient(request.auth)
-    qs = PlanSoins.objects.filter(hospitalisation__patient=patient).order_by('-date_debut')
+    qs = PlanSoins.objects.filter(hospitalisation__patient=patient).select_related('cree_par').order_by('-date_debut')
     return [
         PlanSoinsOut(
             id=p.id,
@@ -344,6 +407,7 @@ def plans_soins_patient(request):
             description=p.description,
             statut=p.statut,
             date_debut=p.date_debut,
+            infirmier_nom=_user_label(p.cree_par),
         )
         for p in qs
     ]
@@ -355,8 +419,7 @@ def doses_patient(request):
     patient = _require_patient(request.auth)
     qs = DosePlanifiee.objects.filter(
         plan_soins__hospitalisation__patient=patient,
-        statut=StatutDose.PLANIFIEE,
-    ).order_by('heure_prevue')
+    ).select_related('infirmier', 'plan_soins').order_by('heure_prevue')
     return [_serialize_dose(d) for d in qs]
 
 
@@ -366,8 +429,7 @@ def prescriptions_patient(request):
     patient = _require_patient(request.auth)
     qs = Prescription.objects.filter(
         hospitalisation__patient=patient,
-        statut=StatutPrescription.VALIDEE,
-    ).select_related('medecin').prefetch_related('diagnostics', 'lignes').order_by('-validee_le')
+    ).select_related('medecin', 'ordre_dispensation').prefetch_related('diagnostics', 'lignes').order_by('-created_at')
     results = []
     for p in qs:
         medecin = p.medecin
@@ -375,6 +437,7 @@ def prescriptions_patient(request):
             PrescriptionPatientOut(
                 id=p.id,
                 statut=p.statut,
+                statut_pharmacie=_pharmacie_statut(p),
                 medecin_nom=f'{medecin.first_name} {medecin.last_name}'.strip() or medecin.username,
                 validee_le=p.validee_le,
                 diagnostics=[f'{d.code_cim10} — {d.libelle}' for d in p.diagnostics.all()],

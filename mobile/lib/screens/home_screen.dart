@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 
 import '../core/api_errors.dart';
 import '../core/sghl_theme.dart';
-import '../core/theme_notifier.dart';
 
 import '../models/patient_models.dart';
 
@@ -17,17 +16,16 @@ import '../services/notification_inbox_service.dart';
 import '../services/patient_services.dart';
 
 import '../widgets/sghl_design_system.dart';
+import '../widgets/human_care_widgets.dart';
 
 import 'constantes_screen.dart';
-
 import 'doses_screen.dart';
-
 import 'factures_screen.dart';
-
+import 'hospitalisations_screen.dart';
+import 'laboratoire_screen.dart';
+import 'notifications_screen.dart';
 import 'plans_screen.dart';
-
 import 'prescriptions_screen.dart';
-
 import 'rendez_vous_screen.dart';
 
 
@@ -135,19 +133,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   @override
-
   Widget build(BuildContext context) {
-
     final bottomPad = widget.embedded ? HomeScreen.shellBottomPadding : 16.0;
+    final unread = context.watch<NotificationInboxService>().unreadCount;
 
 
 
     return Scaffold(
-
-      body: _loading
-
+      body: SghlHumanCareBackground(
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
-
           : _error != null
 
               ? Padding(
@@ -197,24 +192,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     slivers: [
 
                       if (_dashboard != null)
-
                         SliverToBoxAdapter(
-
-                          child: SghlDashboardHero(
+                          child: SghlHumanCareHero(
                             prenom: _dashboard!.profil.prenom,
+                            wellnessMessage: _dashboard!.messageBienveillance.isNotEmpty
+                                ? _dashboard!.messageBienveillance
+                                : 'Vous êtes en bonne santé 💙',
                             trailing: IconButton(
-                              tooltip: 'Mode sombre',
-                              onPressed: () =>
-                                  context.read<ThemeNotifier>().toggle(),
-                              icon: Icon(
-                                context.watch<ThemeNotifier>().isDark
-                                    ? Icons.light_mode_rounded
-                                    : Icons.dark_mode_rounded,
-                                size: 22,
+                              onPressed: () => Navigator.pushNamed(
+                                context,
+                                NotificationsScreen.route,
+                              ),
+                              icon: Badge(
+                                isLabelVisible: unread > 0,
+                                label: Text('$unread'),
+                                child: const Icon(
+                                  Icons.notifications_outlined,
+                                  color: SghlColors.humanCareTeal,
+                                  size: 28,
+                                ),
                               ),
                             ),
                           ),
-
                         ),
 
                       SliverPadding(
@@ -226,56 +225,79 @@ class _HomeScreenState extends State<HomeScreen> {
                           delegate: SliverChildListDelegate([
 
                             if (_dashboard != null) ...[
-
                               Row(
-
                                 children: [
-
-                                  SghlStatCard(
+                                  SghlHumanCareStatCard(
+                                    value: _dashboard!.hospitalisationActive != null
+                                        ? 'En cours'
+                                        : '—',
+                                    label: 'Hospitalisation',
+                                    detail: _dashboard!.hospitalisationActive != null
+                                        ? (_dashboard!.hospitalisationActive!.serviceNom.isNotEmpty
+                                            ? _dashboard!.hospitalisationActive!.serviceNom
+                                            : 'Suivi actif')
+                                        : 'Bonne santé 💙',
+                                    icon: Icons.local_hospital_outlined,
+                                    backgroundColor: SghlColors.humanCareSky,
+                                    borderColor: const Color(0xFFBAE6FD),
+                                    labelColor: const Color(0xFF0369A1),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SghlHumanCareStatCard(
                                     value: '${_dashboard!.prochainesDoses.length}',
                                     label: 'Doses à venir',
+                                    detail: _dashboard!.prochainesDoses.isEmpty
+                                        ? 'Rien de prévu'
+                                        : _dashboard!.prochainesDoses.first.medicament,
                                     icon: Icons.medication_outlined,
-                                    accent: const Color(0xFF90CAF9),
-                                    backgroundColor: const Color(0xFF2A4A6B),
+                                    backgroundColor: SghlColors.humanCareLavender,
+                                    borderColor: const Color(0xFFDDD6FE),
+                                    labelColor: const Color(0xFF6D28D9),
                                   ),
-                                  const SizedBox(width: 10),
-                                  SghlStatCard(
-                                    value:
-                                        '${_dashboard!.constantesRecentes.length}',
-                                    label: 'Constante récente',
-                                    icon: Icons.monitor_heart_outlined,
-                                    accent: const Color(0xFFB0BEC5),
-                                    backgroundColor: const Color(0xFF323848),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  SghlStatCard(
-                                    value: _dashboard!.hospitalisationActive !=
-                                            null
-                                        ? '1'
-                                        : '0',
-                                    label: _dashboard!.hospitalisationActive !=
-                                            null
-                                        ? 'Hospitalisé'
-                                        : 'Aucune hospitalisé',
-                                    icon: Icons.local_hotel_outlined,
-                                    accent: const Color(0xFFFFCC80),
-                                    backgroundColor: const Color(0xFF5C4033),
-                                  ),
-
                                 ],
-
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  SghlHumanCareStatCard(
+                                    value: '${_dashboard!.constantesRecentes.length}',
+                                    label: 'Constantes',
+                                    icon: Icons.monitor_heart_outlined,
+                                    backgroundColor: SghlColors.humanCareSand,
+                                    borderColor: const Color(0xFFFDE68A),
+                                    labelColor: const Color(0xFFB45309),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SghlHumanCareStatCard(
+                                    value: '${_dashboard!.prochainsRdv.length}',
+                                    label: 'Rendez-vous',
+                                    detail: _dashboard!.prochainsRdv.isEmpty
+                                        ? 'Planifiez une visite'
+                                        : _formatDate(_dashboard!.prochainsRdv.first.dateHeure),
+                                    icon: Icons.calendar_month_outlined,
+                                    backgroundColor: const Color(0xFFECFDF5),
+                                    borderColor: const Color(0xFFA7F3D0),
+                                    labelColor: SghlColors.humanCareTeal,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SghlHumanCareButton(
+                                label: 'Prendre rendez-vous',
+                                icon: Icons.calendar_month_rounded,
+                                onPressed: () => Navigator.pushNamed(
+                                  context,
+                                  RendezVousScreen.route,
+                                ),
                               ),
 
-                              const SizedBox(height: 20),
-
                               _HospitalisationCard(
-
-                                hospitalisation:
-
-                                    _dashboard!.hospitalisationActive,
-
+                                hospitalisation: _dashboard!.hospitalisationActive,
                                 formatDate: _formatDate,
-
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  HospitalisationsScreen.route,
+                                ),
                               ),
 
                               const SizedBox(height: kSectionSpacing),
@@ -301,12 +323,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
 
                                   SghlShortcutTile(
-
+                                    icon: Icons.local_hospital_outlined,
+                                    label: 'Hospitalisation',
+                                    color: SghlColors.humanCareTeal,
+                                    onTap: () => Navigator.pushNamed(
+                                      context,
+                                      HospitalisationsScreen.route,
+                                    ),
+                                  ),
+                                  SghlShortcutTile(
                                     icon: Icons.monitor_heart_outlined,
-
                                     label: 'Constantes',
-
-                                    color: SghlColors.medicalBlue,
+                                    color: const Color(0xFF0369A1),
 
                                     onTap: () => Navigator.pushNamed(
 
@@ -319,12 +347,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
 
                                   SghlShortcutTile(
-
                                     icon: Icons.medical_services_outlined,
-
                                     label: 'Soins',
-
-                                    color: SghlColors.turquoise,
+                                    color: const Color(0xFF6D28D9),
 
                                     onTap: () => Navigator.pushNamed(
 
@@ -337,12 +362,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
 
                                   SghlShortcutTile(
-
                                     icon: Icons.medication_outlined,
-
                                     label: 'Médicaments',
-
-                                    color: SghlColors.coral,
+                                    color: const Color(0xFFB45309),
 
                                     onTap: () => Navigator.pushNamed(
 
@@ -355,12 +377,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
 
                                   SghlShortcutTile(
-
                                     icon: Icons.calendar_month_outlined,
-
                                     label: 'Rendez-vous',
-
-                                    color: SghlColors.gold,
+                                    color: SghlColors.humanCareTeal,
 
                                     onTap: () => Navigator.pushNamed(
 
@@ -373,12 +392,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
 
                                   SghlShortcutTile(
-
                                     icon: Icons.description_outlined,
-
                                     label: 'Ordonnances',
-
-                                    color: SghlColors.medicalBlue,
+                                    color: const Color(0xFF0D9488),
 
                                     onTap: () => Navigator.pushNamed(
 
@@ -391,12 +407,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
 
                                   SghlShortcutTile(
-
+                                    icon: Icons.science_outlined,
+                                    label: 'Laboratoire',
+                                    color: const Color(0xFF0369A1),
+                                    onTap: () => Navigator.pushNamed(
+                                      context,
+                                      LaboratoireScreen.route,
+                                    ),
+                                  ),
+                                  SghlShortcutTile(
                                     icon: Icons.receipt_long_outlined,
-
                                     label: 'Factures',
-
-                                    color: SghlColors.coral,
+                                    color: const Color(0xFF059669),
 
                                     onTap: () => Navigator.pushNamed(
 
@@ -513,30 +535,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                 ),
-
+      ),
     );
-
   }
-
 }
 
 
 
 class _HospitalisationCard extends StatelessWidget {
-
   const _HospitalisationCard({
-
     required this.hospitalisation,
-
     required this.formatDate,
-
+    this.onTap,
   });
 
-
-
   final HospitalisationResume? hospitalisation;
-
   final String Function(String) formatDate;
+  final VoidCallback? onTap;
 
 
 
@@ -545,118 +560,76 @@ class _HospitalisationCard extends StatelessWidget {
   Widget build(BuildContext context) {
 
     if (hospitalisation == null) {
-
       return SghlCard(
-
         lightSurface: true,
-
         padding: const EdgeInsets.all(16),
-
+        onTap: onTap,
         child: Row(
-
           children: [
-
             Container(
-
               padding: const EdgeInsets.all(10),
-
-              decoration: const BoxDecoration(
-
-                color: Color(0xFFE8F5E9),
-
+              decoration: BoxDecoration(
+                color: SghlColors.humanCareSky,
                 shape: BoxShape.circle,
-
               ),
-
               child: const Icon(
-
-                Icons.add_rounded,
-
-                color: SghlColors.statusGreen,
-
+                Icons.favorite_rounded,
+                color: SghlColors.humanCareTeal,
                 size: 22,
-
               ),
-
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pas d\'hospitalisation active',
+                    'Vous êtes en bonne santé 💙',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: SghlColors.textLight,
+                          color: SghlColors.humanCareText,
                         ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Vous n\'êtes pas hospitalisé actuellement.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w400,
-                          color: SghlColors.mutedLight,
-                        ),
+                    'Aucune hospitalisation en cours — prenez soin de vous.',
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
             ),
-
           ],
-
         ),
-
       );
-
     }
 
-
-
     final h = hospitalisation!;
-
     return SghlCard(
-
       lightSurface: true,
-
       padding: const EdgeInsets.all(16),
-
+      onTap: onTap,
       child: Column(
-
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
-
           Text(
-            'Hospitalisation en cours',
+            'Votre séjour en cours',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: SghlColors.textLight,
+                  color: SghlColors.humanCareText,
                 ),
           ),
-
           const SizedBox(height: 8),
-
           Text('Motif : ${h.motifAdmission}'),
-
+          if (h.medecinNom.isNotEmpty) Text('Médecin : ${h.medecinNom}'),
+          if (h.serviceNom.isNotEmpty) Text('Service : ${h.serviceNom}'),
           Text('Admission : ${formatDate(h.dateAdmission)}'),
-
           Text(
-
             'Lit : ${h.batimentCode}/${h.serviceCode} — Ch.${h.chambreNumero} Lit ${h.litNumero}',
-
           ),
-
         ],
-
       ),
-
     );
-
   }
-
 }
 
 

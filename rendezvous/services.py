@@ -34,7 +34,7 @@ ACTIFS = {StatutRendezVous.PLANIFIE, StatutRendezVous.CONFIRME}
 
 
 def assert_staff(user: User):
-    if user.role not in {Role.ADMIN, Role.MEDECIN, Role.INFIRMIER}:
+    if user.role not in {Role.ADMIN, Role.MEDECIN, Role.INFIRMIER, Role.SECRETAIRE}:
         raise RendezVousError('Accès refusé.', code='acces_refuse')
 
 

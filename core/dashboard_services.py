@@ -25,6 +25,58 @@ def compter_rdv_planifies() -> int:
     ).count()
 
 
+def cas_a_surveiller() -> list[dict]:
+    """Cas cliniques nécessitant une attention (démo + données réelles)."""
+    from soins.models import ConstanteVitale
+
+    cas = []
+    for hosp in Hospitalisation.objects.filter(statut=StatutHospitalisation.ACTIVE).select_related(
+        'patient',
+    )[:10]:
+        patient = hosp.patient
+        const = (
+            ConstanteVitale.objects.filter(hospitalisation=hosp)
+            .order_by('-mesure_le')
+            .first()
+        )
+        niveau = 'stable'
+        motif = hosp.motif_admission or 'Suivi post-admission'
+        if const:
+            if const.temperature and float(const.temperature) >= 38.0:
+                niveau = 'urgent'
+                motif = f'Fièvre {const.temperature}°C — surveillance rapprochée'
+            elif const.tension_systolique and const.tension_systolique >= 140:
+                niveau = 'attention'
+                motif = f'Tension élevée {const.tension_systolique}/{const.tension_diastolique or "—"} mmHg'
+        cas.append(
+            {
+                'patient_nom': f'{patient.prenom} {patient.nom}',
+                'patient_dossier': patient.numero_dossier,
+                'motif': motif,
+                'niveau': niveau,
+                'service': 'Médecine interne',
+            }
+        )
+    if not cas:
+        cas = [
+            {
+                'patient_nom': 'Marie Dupont',
+                'patient_dossier': 'P-2026-002',
+                'motif': 'Fièvre 38,2°C — prise de constantes',
+                'niveau': 'urgent',
+                'service': 'Médecine interne',
+            },
+            {
+                'patient_nom': 'Philippe Moussavou',
+                'patient_dossier': 'P-2026-003',
+                'motif': 'Suivi post-opératoire — stable',
+                'niveau': 'stable',
+                'service': 'Chirurgie',
+            },
+        ]
+    return cas
+
+
 def indicateurs_tableau_de_bord() -> dict:
     return {
         'patients_actifs': compter_patients_actifs(),

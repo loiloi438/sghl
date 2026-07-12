@@ -4,7 +4,9 @@ import App from './App.vue'
 import router from './router/index.js'
 import './index.css'
 import './assets/main.css'
-import { initTheme } from './composables/useTheme.js'
+import './assets/themes.css'
+import './assets/human-care-patient.css'
+import { initTheme, setPortalTheme } from './composables/useTheme.js'
 
 initTheme()
 

@@ -5,17 +5,12 @@ import 'package:provider/provider.dart';
 
 
 import '../core/api_errors.dart';
-
 import '../core/sghl_theme.dart';
-
-import '../core/theme_notifier.dart';
-
 import '../models/patient_models.dart';
-
 import '../services/patient_services.dart';
-
+import '../widgets/human_care_widgets.dart';
 import '../widgets/sghl_design_system.dart';
-
+import '../widgets/patient_human_care_page.dart';
 import 'login_screen.dart';
 
 
@@ -100,8 +95,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
     final auth = context.watch<AuthService>();
 
-    final themeNotifier = context.watch<ThemeNotifier>();
-
     final bottomPad =
 
         widget.embedded ? kPatientShellBottomPadding : 16.0;
@@ -116,7 +109,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
           : AppBar(title: const Text('Mon profil')),
 
-      body: _loading
+      body: SghlHumanCareBackground(
+        child: _loading
 
           ? const Center(child: CircularProgressIndicator())
 
@@ -176,35 +170,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
                     children: [
 
-                      if (widget.embedded) ...[
-
-                        Text(
-
-                          'Profil',
-
-                          style: Theme.of(context).textTheme.headlineSmall,
-
+                      if (widget.embedded)
+                        PatientHcHeader(
+                          title: 'Mon profil',
+                          subtitle: 'Vos informations et paramètres 💙',
+                          embedded: true,
                         ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-
-                          'Vos informations personnelles et paramètres.',
-
-                          style: Theme.of(context).textTheme.bodyMedium
-
-                              ?.copyWith(
-
-                            color: Theme.of(context).colorScheme.outline,
-
-                          ),
-
-                        ),
-
-                        const SizedBox(height: 20),
-
-                      ],
 
                       SghlCard(
                         lightSurface: true,
@@ -221,7 +192,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
                                 shape: BoxShape.circle,
 
-                                gradient: SghlColors.primaryGradient,
+                                gradient: SghlColors.humanCareCtaGradient,
 
                               ),
 
@@ -244,7 +215,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                                   style: SghlTypography.montserrat(
                                     fontSize: SghlTypography.display,
                                     fontWeight: FontWeight.w800,
-                                    color: SghlColors.medicalBlue,
+                                    color: SghlColors.humanCareTeal,
                                   ),
 
                                 ),
@@ -403,43 +374,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
                       ],
 
-                      const SizedBox(height: 16),
-
-                      SghlCard(
-                        lightSurface: true,
-
-                        child: SwitchListTile(
-
-                          contentPadding: EdgeInsets.zero,
-
-                          title: const Text('Mode sombre'),
-
-                          subtitle: const Text(
-
-                            'Fond anthracite et texte blanc cassé',
-
-                          ),
-
-                          secondary: Icon(
-
-                            themeNotifier.isDark
-
-                                ? Icons.dark_mode_rounded
-
-                                : Icons.light_mode_rounded,
-
-                            color: SghlColors.medicalBlue,
-
-                          ),
-
-                          value: themeNotifier.isDark,
-
-                          onChanged: (_) => themeNotifier.toggle(),
-
-                        ),
-
-                      ),
-
                       const SizedBox(height: 20),
 
                       OutlinedButton.icon(
@@ -472,6 +406,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
                 ),
 
+      ),
     );
 
   }
@@ -518,7 +453,7 @@ class _InfoTile extends StatelessWidget {
 
         children: [
 
-          Icon(icon, size: 20, color: SghlColors.medicalBlue),
+          Icon(icon, size: 20, color: SghlColors.humanCareTeal),
 
           const SizedBox(width: 12),
 

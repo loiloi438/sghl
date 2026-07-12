@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
+import '../widgets/patient_human_care_page.dart';
 import '../widgets/pdf_download_button.dart';
 
 class PrescriptionsScreen extends StatefulWidget {
@@ -19,39 +20,40 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   List<PrescriptionPatient> _items = [];
   bool _loading = true;
 
-  String _statusLabel(String status) {
-    switch (status.toLowerCase()) {
+  PatientHcBadgeTone _pharmacieTone(String statut) {
+    switch (statut) {
       case 'validee':
-      case 'validée':
-      case 'valide':
-        return 'Validée';
-      case 'en_attente':
-      case 'en attente':
-      case 'pending':
-        return 'En attente';
-      case 'rejetee':
-      case 'rejetée':
-        return 'Rejetée';
+        return PatientHcBadgeTone.mint;
+      case 'retiree':
+        return PatientHcBadgeTone.sky;
       default:
-        return status.isEmpty ? 'Inconnu' : status;
+        return PatientHcBadgeTone.sand;
     }
   }
 
-  Color _statusColor(BuildContext context, String status) {
-    switch (status.toLowerCase()) {
+  PatientHcBadgeTone _tone(String statut) {
+    switch (statut.toLowerCase()) {
       case 'validee':
-      case 'validée':
-      case 'valide':
-        return Theme.of(context).colorScheme.primaryContainer;
-      case 'en_attente':
-      case 'en attente':
-      case 'pending':
-        return Theme.of(context).colorScheme.tertiaryContainer;
-      case 'rejetee':
-      case 'rejetée':
-        return Theme.of(context).colorScheme.errorContainer;
+        return PatientHcBadgeTone.mint;
+      case 'brouillon':
+        return PatientHcBadgeTone.sand;
+      case 'annulee':
+        return PatientHcBadgeTone.alert;
       default:
-        return Theme.of(context).colorScheme.surfaceContainerHighest;
+        return PatientHcBadgeTone.sky;
+    }
+  }
+
+  String _label(String statut) {
+    switch (statut.toLowerCase()) {
+      case 'validee':
+        return 'Validée';
+      case 'brouillon':
+        return 'En attente';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return statut;
     }
   }
 
@@ -74,9 +76,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   String _formatDate(String? iso) {
     if (iso == null || iso.isEmpty) return '—';
     try {
-      return DateFormat(
-        'dd/MM/yyyy HH:mm',
-      ).format(DateTime.parse(iso).toLocal());
+      return DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(iso).toLocal());
     } catch (_) {
       return iso;
     }
@@ -84,101 +84,70 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mes prescriptions')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _items.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: Text('Aucune prescription validée')),
+    return PatientHcListPage(
+      title: 'Pharmacie',
+      subtitle: 'Vos ordonnances et leur disponibilité',
+      loading: _loading,
+      onRefresh: _load,
+      emptyIcon: Icons.medication_outlined,
+      emptyTitle: 'Aucune prescription',
+      emptySubtitle: 'Vos ordonnances apparaîtront ici dès qu\'elles seront disponibles.',
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final rx = _items[index];
+        return PatientHcCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('💊', style: TextStyle(fontSize: 28)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        PatientHcBadge(label: _label(rx.statut), tone: _tone(rx.statut)),
+                        const SizedBox(height: 4),
+                        PatientHcBadge(
+                          label: rx.statutPharmacieLabel,
+                          tone: _pharmacieTone(rx.statutPharmacie),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Dr ${rx.medecinNom}',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          rx.valideeLe != null ? 'Validée le ${_formatDate(rx.valideeLe)}' : 'En cours de validation',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ],
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _items.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final rx = _items[index];
-                        return Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Prescription du ${_formatDate(rx.valideeLe)}',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Chip(
-                                      label: Text(_statusLabel(rx.statut)),
-                                      backgroundColor: _statusColor(
-                                        context,
-                                        rx.statut,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text('Médecin : ${rx.medecinNom}'),
-                                if (rx.diagnostics.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    'Diagnostics',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.labelLarge,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  ...rx.diagnostics.map(
-                                    (d) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Text('• $d'),
-                                    ),
-                                  ),
-                                ],
-                                if (rx.medicaments.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    'Médicaments',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.labelLarge,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  ...rx.medicaments.map(
-                                    (m) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Text('• $m'),
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 12),
-                                PdfDownloadButton(
-                                  label: 'PDF signé',
-                                  onDownload: () => context
-                                      .read<PatientService>()
-                                      .downloadPrescriptionPdf(rx.id),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
                     ),
-            ),
+                  ),
+                ],
+              ),
+              if (rx.medicaments.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                ...rx.medicaments.map(
+                  (m) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text('• $m'),
+                  ),
+                ),
+              ],
+              if (rx.statut == 'validee') ...[
+                const SizedBox(height: 12),
+                PdfDownloadButton(
+                  label: 'PDF ordonnance',
+                  onDownload: () => context.read<PatientService>().downloadPrescriptionPdf(rx.id),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

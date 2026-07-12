@@ -1,6 +1,5 @@
 from django.db.models import Q
 from ninja import Router, Schema
-from urllib.parse import quote_plus
 
 from accounts.models import Role, User
 from api.v1.auth_backend import JWTAuth
@@ -10,18 +9,8 @@ jwt_auth = JWTAuth()
 
 
 def get_default_profile_photo(user: User) -> str:
-    full_name = f'{user.first_name} {user.last_name}'.strip() or user.username
-    name = quote_plus(full_name)
-    if user.role == Role.MEDECIN:
-        background = '1d4ed8'
-    elif user.role == Role.INFIRMIER:
-        background = '047857'
-    else:
-        background = '334155'
-    return (
-        f'https://ui-avatars.com/api/?name={name}&background={background}'
-        '&color=ffffff&size=128&rounded=true&font-size=0.45'
-    )
+    img = (user.id % 68) + 1
+    return f'https://i.pravatar.cc/128?img={img}'
 
 
 class PersonnelOut(Schema):

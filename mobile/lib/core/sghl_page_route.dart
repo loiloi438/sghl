@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Transition fade + slide-up pour les pages secondaires.
 class SghlSlideUpRoute<T> extends PageRouteBuilder<T> {
-  SghlSlideUpRoute({required Widget page, RouteSettings? settings})
+  SghlSlideUpRoute({required Widget page, super.settings})
       : super(
-          settings: settings,
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final curved = CurvedAnimation(

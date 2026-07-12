@@ -13,7 +13,7 @@ from documents.pdf_builder import build_rapport_statistiques_pdf
 router = Router(tags=['Statistiques'])
 jwt_auth = JWTAuth()
 
-ROLES_STATISTIQUES = {Role.ADMIN, Role.COMPTABLE, Role.MEDECIN}
+ROLES_STATISTIQUES = {Role.ADMIN, Role.COMPTABLE, Role.MEDECIN, Role.SECRETAIRE}
 
 
 class KPIOut(Schema):

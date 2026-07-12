@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-900">
+  <div class="tech-dashboard min-h-screen text-slate-900">
+    <a href="#main-staff" class="skip-link">Aller au contenu principal</a>
     <header class="border-b border-slate-200 bg-white/80 backdrop-blur">
       <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
         <div class="flex items-center gap-4">
@@ -8,7 +9,7 @@
           </div>
           <div>
             <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Centre Hospitalier SGHL</h1>
-            <p class="text-sm text-slate-600">Votre santé, notre priorité</p>
+            <p class="text-sm text-slate-600">🧬 Tech-Health · Système de gestion médicale</p>
           </div>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -22,7 +23,7 @@
         {{ error }}
       </div>
 
-      <section aria-label="Indicateurs clés">
+      <section id="main-staff" aria-label="Indicateurs clés">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="mb-4 flex items-center gap-3">
@@ -72,6 +73,37 @@
           </RouterLink>
         </article>
       </div>
+    </section>
+
+    <section aria-label="Cas à surveiller">
+      <article class="glass-card p-6">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-lg font-semibold text-white">Cas à surveiller</h3>
+            <p class="text-sm text-slate-400">Alertes médicales prioritaires</p>
+          </div>
+          <RouterLink to="/hospitalisations" class="text-sm font-semibold text-sky-300 hover:text-sky-200">Voir tout →</RouterLink>
+        </div>
+        <div class="grid gap-3 md:grid-cols-2">
+          <div
+            v-for="cas in casSurveiller"
+            :key="cas.patient_dossier + cas.motif"
+            class="rounded-2xl border border-slate-600/50 bg-slate-900/50 p-4"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <strong class="text-white">{{ cas.patient_nom }}</strong>
+              <span
+                class="rounded-full px-2.5 py-1 text-xs font-bold uppercase"
+                :class="cas.niveau === 'urgent' ? 'bg-orange-500/20 text-orange-200' : cas.niveau === 'attention' ? 'bg-amber-500/20 text-amber-200' : 'bg-emerald-500/20 text-emerald-200'"
+              >
+                {{ cas.niveau === 'urgent' ? 'Urgent' : cas.niveau === 'attention' ? 'Attention' : 'Stable' }}
+              </span>
+            </div>
+            <p class="mt-2 text-sm text-slate-300">{{ cas.motif }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ cas.patient_dossier }} · {{ cas.service }}</p>
+          </div>
+        </div>
+      </article>
     </section>
 
     <section aria-label="Activité et tendances">
@@ -184,11 +216,14 @@ const { modulesByCategory: moduleCategories } = useNavigation()
 const loading = ref(true)
 const error = ref('')
 const hospitalisations = ref([])
+const casSurveiller = ref([])
 const stats = reactive({
   patientsActifs: 0,
   rdvToday: 0,
   rdvPlanifies: 0,
   prescriptionsPending: 0,
+  facturesEnAttente: 0,
+  messagesNonLus: 0,
 })
 
 const todayLabel = computed(() => {
@@ -200,10 +235,10 @@ const todayLabel = computed(() => {
 })
 
 const activityChart = computed(() => [
-  { label: 'Patients', value: stats.patientsActifs, color: '#007BFF' },
-  { label: 'RDV jour', value: stats.rdvToday, color: '#1ABC9C' },
-  { label: 'RDV plan.', value: stats.rdvPlanifies, color: '#1ABC9C' },
-  { label: 'Ordonn.', value: stats.prescriptionsPending, color: '#2ECC71' },
+  { label: 'Patients', value: stats.patientsActifs, color: '#38bdf8' },
+  { label: 'RDV jour', value: stats.rdvToday, color: '#a78bfa' },
+  { label: 'Factures', value: stats.facturesEnAttente, color: '#fbbf24' },
+  { label: 'Ordonn.', value: stats.prescriptionsPending, color: '#34d399' },
 ])
 
 function getModuleIcon(label) {
@@ -236,18 +271,24 @@ async function load() {
   error.value = ''
   hospitalisations.value = []
   try {
-    const requests = [api.get('/dashboard/stats/')]
+    const requests = [
+      api.get('/dashboard/stats/'),
+      api.get('/dashboard/cas-a-surveiller/'),
+    ]
     if (auth.canHospitalisation) {
       requests.push(api.get('/hospitalisations/actives/'))
     }
     const results = await Promise.all(requests)
     const statsRes = results[0]
+    casSurveiller.value = results[1].data
     stats.patientsActifs = statsRes.data.patients_actifs
     stats.rdvToday = statsRes.data.rdv_aujourdhui
     stats.rdvPlanifies = statsRes.data.rdv_planifies ?? 0
     stats.prescriptionsPending = statsRes.data.prescriptions_en_attente
-    if (auth.canHospitalisation && results[1]) {
-      hospitalisations.value = unwrapList(results[1].data)
+    stats.facturesEnAttente = statsRes.data.factures_en_attente ?? 0
+    stats.messagesNonLus = statsRes.data.messages_non_lus ?? 0
+    if (auth.canHospitalisation && results[2]) {
+      hospitalisations.value = unwrapList(results[2].data)
     }
   } catch (e) {
     error.value = getErrorMessage(e)

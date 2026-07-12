@@ -45,10 +45,10 @@
               :disabled="busy"
               @click="runAction('confirmer')"
             >
-              Confirmer
+              Valider
             </button>
             <button
-              v-if="rdv.statut === 'confirme'"
+              v-if="clinicalActions && rdv.statut === 'confirme'"
               type="button"
               class="btn btn-primary"
               :disabled="busy"
@@ -57,7 +57,7 @@
               Terminer
             </button>
             <button
-              v-if="['planifie', 'confirme'].includes(rdv.statut)"
+              v-if="clinicalActions && ['planifie', 'confirme'].includes(rdv.statut)"
               type="button"
               class="btn btn-secondary"
               :disabled="busy"
@@ -142,6 +142,7 @@ const props = defineProps({
   open: { type: Boolean, default: false },
   rdv: { type: Object, default: null },
   medecins: { type: Array, default: () => [] },
+  clinicalActions: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['update:open', 'success'])
@@ -151,7 +152,7 @@ const panelError = ref('')
 
 const statutLabels = {
   planifie: 'Planifié',
-  confirme: 'Confirmé',
+  confirme: 'Validé',
   annule: 'Annulé',
   termine: 'Terminé',
   absent: 'Absent',
@@ -261,10 +262,10 @@ async function runAction(type) {
     }
     await api.post(`/rendez-vous/${props.rdv.id}/${endpoints[type]}/`, body)
     const labels = {
-      confirmer: 'Rendez-vous confirmé — e-mail envoyé au patient.',
+      confirmer: 'Rendez-vous validé — notification envoyée au patient.',
       terminer: 'Rendez-vous terminé.',
       absent: 'Patient marqué absent.',
-      annuler: 'Rendez-vous annulé — e-mail envoyé au patient.',
+      annuler: 'Rendez-vous annulé — notification envoyée au patient.',
     }
     emit('success', labels[type] || 'Mis à jour.')
     close()

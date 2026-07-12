@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../core/api_errors.dart';
 import '../services/patient_services.dart';
+import '../core/sghl_theme.dart';
+import '../widgets/human_care_widgets.dart';
 import '../widgets/sghl_design_system.dart';
-import 'login_screen.dart';
+import 'patient_shell.dart';
 
 class ValidateAccountScreen extends StatefulWidget {
   const ValidateAccountScreen({
@@ -51,19 +53,27 @@ class _ValidateAccountScreenState extends State<ValidateAccountScreen> {
       _message = null;
     });
     try {
-      final detail = await context.read<PatientService>().validateAccount(
+      final patientService = context.read<PatientService>();
+      final auth = context.read<AuthService>();
+      final result = await patientService.validateAccount(
             username: _usernameController.text,
             code: _codeController.text,
           );
       if (!mounted) return;
-      setState(() => _message = detail);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-      if (mounted) {
+      setState(() => _message = result.detail);
+      final authOk = await auth.completeValidation(
+            result.accessToken,
+            result.refreshToken,
+          );
+      if (!mounted) return;
+      if (authOk) {
         Navigator.pushNamedAndRemoveUntil(
           context,
-          LoginScreen.route,
+          PatientShell.route,
           (route) => false,
         );
+      } else {
+        setState(() => _error = auth.error);
       }
     } catch (e) {
       if (mounted) setState(() => _error = friendlyApiError(e));
@@ -91,80 +101,86 @@ class _ValidateAccountScreenState extends State<ValidateAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Validation du compte'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      extendBodyBehindAppBar: true,
-      body: SghlLoginBackground(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SghlCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Activez votre compte',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Un code de validation a été envoyé par e-mail. Saisissez-le pour activer votre compte.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_message != null)
-                    SghlFeedbackBanner(
-                      message: _message!,
-                      type: SghlFeedbackType.success,
+    return Theme(
+      data: SghlTheme.patientHumanCare(),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Validation du compte'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        extendBodyBehindAppBar: true,
+        body: SghlHumanCareBackground(
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SghlCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '🌿 Human-Care',
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
-                  if (_error != null) ...[
                     const SizedBox(height: 8),
-                    SghlFeedbackBanner(
-                      message: _error!,
-                      type: SghlFeedbackType.error,
+                    Text(
+                      'Activez votre compte',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Un code de validation a été envoyé par e-mail. Saisissez-le pour accéder directement à votre espace patient 💙',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    if (_message != null)
+                      SghlFeedbackBanner(
+                        message: _message!,
+                        type: SghlFeedbackType.success,
+                      ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 8),
+                      SghlFeedbackBanner(
+                        message: _error!,
+                        type: SghlFeedbackType.error,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Identifiant',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _codeController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      decoration: const InputDecoration(
+                        labelText: 'Code de validation',
+                        counterText: '',
+                        prefixIcon: Icon(Icons.pin_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SghlHumanCareButton(
+                      label: _loading ? 'Validation…' : 'Valider et accéder à mon espace',
+                      loading: _loading,
+                      onPressed: _loading ? null : _validate,
+                    ),
+                    TextButton(
+                      onPressed: _resendLoading ? null : _resend,
+                      child: Text(
+                        _resendLoading ? 'Envoi…' : 'Renvoyer le code',
+                      ),
                     ),
                   ],
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Identifiant',
-                      prefixIcon: Icon(Icons.person_outline_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _codeController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    decoration: const InputDecoration(
-                      labelText: 'Code de validation',
-                      counterText: '',
-                      prefixIcon: Icon(Icons.pin_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SghlCoralButton(
-                    label: _loading ? 'Validation…' : 'Valider',
-                    loading: _loading,
-                    onPressed: _validate,
-                  ),
-                  TextButton(
-                    onPressed: _resendLoading ? null : _resend,
-                    child: Text(
-                      _resendLoading ? 'Envoi…' : 'Renvoyer le code',
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

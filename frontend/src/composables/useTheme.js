@@ -1,31 +1,33 @@
 import { ref, watch } from 'vue'
 
 const STORAGE_KEY = 'sghl-theme'
-const theme = ref('light')
+const theme = ref('human-care')
 
 function applyTheme(value) {
   const root = document.documentElement
   root.dataset.theme = value
-  root.style.colorScheme = value
+  root.style.colorScheme = value === 'tech-health' ? 'dark' : 'light'
 }
 
 function initTheme() {
   const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved === 'light') {
-    theme.value = 'light'
-  } else if (saved === 'dark') {
-    // Ancien mode sombre : bascule vers le thème clair harmonisé
-    theme.value = 'light'
-    localStorage.setItem(STORAGE_KEY, 'light')
+  if (saved === 'human-care' || saved === 'tech-health') {
+    theme.value = saved
   } else {
-    theme.value = 'light'
+    theme.value = 'human-care'
   }
   applyTheme(theme.value)
 }
 
+function setPortalTheme(portal) {
+  const next = portal === 'staff' ? 'tech-health' : 'human-care'
+  theme.value = next
+  localStorage.setItem(STORAGE_KEY, next)
+  applyTheme(next)
+}
+
 function toggleTheme() {
-  // Interface harmonisée en mode clair uniquement (lisibilité)
-  theme.value = 'light'
+  theme.value = theme.value === 'tech-health' ? 'human-care' : 'tech-health'
 }
 
 watch(theme, (value) => {
@@ -34,7 +36,15 @@ watch(theme, (value) => {
 })
 
 export function useTheme() {
-  return { theme, toggleTheme, initTheme, isDark: () => theme.value === 'dark' }
+  return {
+    theme,
+    toggleTheme,
+    initTheme,
+    setPortalTheme,
+    isDark: () => theme.value === 'tech-health',
+    isHumanCare: () => theme.value === 'human-care',
+    isTechHealth: () => theme.value === 'tech-health',
+  }
 }
 
-export { initTheme }
+export { initTheme, setPortalTheme }

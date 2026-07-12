@@ -16,7 +16,7 @@ from patients.models import Patient
 router = Router(tags=['Assurance'])
 jwt_auth = JWTAuth()
 
-ROLES = {Role.ADMIN, Role.COMPTABLE}
+ROLES = {Role.ADMIN, Role.COMPTABLE, Role.SECRETAIRE}
 
 
 def _check(user: User):

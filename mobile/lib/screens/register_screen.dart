@@ -5,6 +5,7 @@ import '../core/api_errors.dart';
 import '../services/patient_services.dart';
 import '../widgets/server_settings_card.dart';
 import '../widgets/sghl_design_system.dart';
+import '../widgets/human_care_widgets.dart';
 import 'validate_account_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -65,9 +66,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    final service = context.read<PatientService>();
     final serverOk =
         await _serverSettingsKey.currentState?.persistServerUrl(context) ?? false;
-    if (!serverOk) return;
+    if (!serverOk || !mounted) return;
 
     setState(() {
       _loading = true;
@@ -75,7 +77,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      final service = context.read<PatientService>();
       final dob = _dateNaissance!;
       final dateStr =
           '${dob.year.toString().padLeft(4, '0')}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
@@ -115,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
-      body: SghlLoginBackground(
+      body: SghlHumanCareBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -126,6 +127,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
+                      '🌿 Human-Care',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
                       'Inscription patient',
                       style: Theme.of(context)
                           .textTheme
@@ -134,10 +140,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Renseignez vos informations pour accéder à l\'espace patient.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+                      'Créez votre espace patient — simple, rassurant et sécurisé 💙',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
                     if (_error != null) ...[
@@ -261,10 +265,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                     const SizedBox(height: 20),
-                    SghlCoralButton(
-                      label: _loading ? 'Création…' : 'Créer mon compte',
+                    SghlHumanCareButton(
+                      label: _loading ? 'Création…' : 'Créer mon compte patient',
                       loading: _loading,
-                      onPressed: _submit,
+                      onPressed: _loading ? null : _submit,
                     ),
                   ],
                 ),

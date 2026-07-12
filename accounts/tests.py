@@ -136,6 +136,9 @@ class PatientRegistrationTests(TestCase):
 
         validate_res = client.post('/auth/validate/', json={'username': username, 'code': code})
         self.assertEqual(validate_res.status_code, 200, validate_res.content)
+        payload = validate_res.json()
+        self.assertIn('access_token', payload)
+        self.assertIn('refresh_token', payload)
 
         user = User.objects.get(username=username)
         self.assertTrue(user.is_active)
