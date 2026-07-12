@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
+import 'api_errors.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
@@ -24,7 +24,7 @@ class ApiClient {
   final FlutterSecureStorage _storage;
   static const _accessKey = 'sghl_access_token';
   static const _refreshKey = 'sghl_refresh_token';
-  static const _requestTimeout = Duration(seconds: 30);
+  static const _requestTimeout = Duration(seconds: 45);
 
   Future<Map<String, String>> _headers({bool auth = true, bool binary = false}) async {
     final headers = <String, String>{};
@@ -51,12 +51,10 @@ class ApiClient {
   Future<List<int>> downloadBytes(String path, {bool auth = true}) async {
     final response = await _request('GET', path, auth: auth, binary: true);
     if (response.statusCode >= 400) {
-      String message = 'Erreur serveur (${response.statusCode})';
-      try {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        message = (data['detail'] ?? data['message'] ?? message).toString();
-      } catch (_) {}
-      throw ApiException(message, statusCode: response.statusCode);
+      throw ApiException(
+        friendlyHttpError(response.statusCode, response.body),
+        statusCode: response.statusCode,
+      );
     }
     return response.bodyBytes;
   }
@@ -95,29 +93,32 @@ class ApiClient {
             .timeout(_requestTimeout);
       }
     } on TimeoutException {
-      throw ApiException(
-        'Delai depasse. Verifiez l\'URL dans « Serveur SGHL » et que le backend tourne (runserver 0.0.0.0:8000).',
-      );
-    } on SocketException {
-      throw ApiException(
-        'Impossible de joindre le serveur. Verifiez l\'URL dans « Serveur SGHL » et votre connexion Wi-Fi.',
-      );
+      throw ApiException(friendlyNetworkError());
     } on http.ClientException {
-      throw ApiException(
-        'Impossible de joindre le serveur. Verifiez l\'URL dans « Serveur SGHL » et votre connexion Wi-Fi.',
-      );
+      throw ApiException(friendlyNetworkError());
+    } catch (e) {
+      if (isNetworkError(e)) {
+        throw ApiException(friendlyNetworkError());
+      }
+      rethrow;
     }
 
     if (response.statusCode == 401 && auth) {
       final refreshed = await _refreshAccessToken();
       if (refreshed) {
         final retryHeaders = await _headers(auth: true, binary: binary);
-        if (method == 'GET') {
-          response = await http.get(uri, headers: retryHeaders).timeout(_requestTimeout);
-        } else {
-          response = await http
-              .post(uri, headers: retryHeaders, body: jsonEncode(body))
-              .timeout(_requestTimeout);
+        try {
+          if (method == 'GET') {
+            response = await http.get(uri, headers: retryHeaders).timeout(_requestTimeout);
+          } else {
+            response = await http
+                .post(uri, headers: retryHeaders, body: jsonEncode(body))
+                .timeout(_requestTimeout);
+          }
+        } on TimeoutException {
+          throw ApiException(friendlyNetworkError());
+        } on http.ClientException {
+          throw ApiException(friendlyNetworkError());
         }
       }
     }
@@ -154,24 +155,20 @@ class ApiClient {
 
   Map<String, dynamic> decodeMap(http.Response response) {
     if (response.statusCode >= 400) {
-      String message = 'Erreur serveur (${response.statusCode})';
-      try {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        message = (data['detail'] ?? data['message'] ?? message).toString();
-      } catch (_) {}
-      throw ApiException(message, statusCode: response.statusCode);
+      throw ApiException(
+        friendlyHttpError(response.statusCode, response.body),
+        statusCode: response.statusCode,
+      );
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   List<dynamic> decodeList(http.Response response) {
     if (response.statusCode >= 400) {
-      String message = 'Erreur serveur (${response.statusCode})';
-      try {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        message = (data['detail'] ?? data['message'] ?? message).toString();
-      } catch (_) {}
-      throw ApiException(message, statusCode: response.statusCode);
+      throw ApiException(
+        friendlyHttpError(response.statusCode, response.body),
+        statusCode: response.statusCode,
+      );
     }
 
     final decoded = jsonDecode(response.body);
@@ -182,15 +179,12 @@ class ApiClient {
     return const [];
   }
 
-  /// Réponse API en tableau JSON (ex. `/rendez-vous/semaine/`).
   List<dynamic> decodeJsonList(http.Response response) {
     if (response.statusCode >= 400) {
-      String message = 'Erreur serveur (${response.statusCode})';
-      try {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        message = (data['detail'] ?? data['message'] ?? message).toString();
-      } catch (_) {}
-      throw ApiException(message, statusCode: response.statusCode);
+      throw ApiException(
+        friendlyHttpError(response.statusCode, response.body),
+        statusCode: response.statusCode,
+      );
     }
     final decoded = jsonDecode(response.body);
     if (decoded is List) {

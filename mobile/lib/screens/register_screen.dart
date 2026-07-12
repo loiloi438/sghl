@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_config.dart';
 import '../core/api_errors.dart';
+import '../core/sghl_theme.dart';
 import '../services/patient_services.dart';
+import '../widgets/human_care_auth_layout.dart';
+import '../widgets/human_care_widgets.dart';
 import '../widgets/server_settings_card.dart';
 import '../widgets/sghl_design_system.dart';
-import '../widgets/human_care_widgets.dart';
 import 'validate_account_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -67,9 +70,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final service = context.read<PatientService>();
-    final serverOk =
-        await _serverSettingsKey.currentState?.persistServerUrl(context) ?? false;
-    if (!serverOk || !mounted) return;
+    if (ApiConfig.showServerSettings) {
+      final serverOk =
+          await _serverSettingsKey.currentState?.persistServerUrl(context) ??
+              false;
+      if (!serverOk || !mounted) return;
+    }
 
     setState(() {
       _loading = true;
@@ -109,53 +115,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Créer un compte patient'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      extendBodyBehindAppBar: true,
-      body: SghlHumanCareBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            child: Form(
-              key: _formKey,
-              child: SghlCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '🌿 Human-Care',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Inscription patient',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Créez votre espace patient — simple, rassurant et sécurisé 💙',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    if (_error != null) ...[
-                      SghlFeedbackBanner(
-                        message: _error!,
-                        type: SghlFeedbackType.error,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    ServerSettingsCard(
-                      key: _serverSettingsKey,
-                      initiallyExpanded: true,
-                    ),
-                    const SizedBox(height: 16),
+    return Theme(
+      data: SghlTheme.patientHumanCare(),
+      child: Scaffold(
+        body: Form(
+          key: _formKey,
+          child: SghlHumanCareAuthLayout(
+            loading: _loading,
+            title: 'Inscription patient',
+            subtitle: SghlHumanCareAuthLayout.welcomeSubtitle,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: _loading ? null : () => Navigator.maybePop(context),
+              tooltip: 'Retour',
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_error != null) ...[
+                  SghlFeedbackBanner(
+                    message: _error!,
+                    type: SghlFeedbackType.error,
+                    title: 'Inscription interrompue',
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (ApiConfig.showServerSettings) ...[
+                  ServerSettingsCard(
+                    key: _serverSettingsKey,
+                    initiallyExpanded: ApiConfig.usesLocalDefault,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                     TextFormField(
                       controller: _nomController,
                       decoration: const InputDecoration(
@@ -266,13 +257,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
                     SghlHumanCareButton(
-                      label: _loading ? 'Création…' : 'Créer mon compte patient',
+                      label: 'Créer mon compte patient',
                       loading: _loading,
+                      icon: Icons.person_add_alt_1_rounded,
                       onPressed: _loading ? null : _submit,
                     ),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
         ),

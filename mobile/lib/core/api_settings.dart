@@ -15,6 +15,11 @@ class ApiSettings {
     await prefs.setString(_key, normalize(url));
   }
 
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
+
   static String normalize(String url) {
     var value = url.trim();
     while (value.endsWith('/')) {

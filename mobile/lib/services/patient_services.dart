@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
+import '../core/api_errors.dart';
 import '../core/pdf_download.dart';
 import '../models/patient_models.dart';
 import 'push_service.dart';
@@ -102,7 +103,7 @@ class AuthService extends ChangeNotifier {
         _pendingMfaUsername = username.trim();
         return LoginStatus.mfaRequired;
       }
-      _error = e.message;
+      _error = friendlyApiError(e);
       return LoginStatus.failed;
     } finally {
       _loading = false;
@@ -139,7 +140,7 @@ class AuthService extends ChangeNotifier {
       _pendingMfaUsername = null;
       return await _finalizeLogin(profile);
     } on ApiException catch (e) {
-      _error = e.message;
+      _error = friendlyApiError(e);
       return false;
     } finally {
       _loading = false;
@@ -157,7 +158,7 @@ class AuthService extends ChangeNotifier {
       final profile = UserProfile.fromJson(_api.decodeMap(meResponse));
       return await _finalizeLogin(profile);
     } on ApiException catch (e) {
-      _error = e.message;
+      _error = friendlyApiError(e);
       return false;
     } finally {
       _loading = false;

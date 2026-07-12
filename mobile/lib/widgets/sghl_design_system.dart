@@ -181,10 +181,10 @@ class SghlFeedbackBanner extends StatelessWidget {
 
     final (icon, bg, fg, defaultTitle) = switch (type) {
       SghlFeedbackType.error => (
-          Icons.wifi_off_rounded,
+          Icons.health_and_safety_outlined,
           const Color(0xFFFFE8E5),
           const Color(0xFFE57373),
-          'Connexion impossible',
+          'Connexion interrompue',
         ),
 
       SghlFeedbackType.success => (
