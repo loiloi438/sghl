@@ -59,7 +59,7 @@ services:
       - key: DEFAULT_FROM_EMAIL
         value: mouangatresor673@gmail.com
       - key: SGHL_SEED_ADMIN
-        value: "false"
+        value: "true"
       - key: SGHL_SEED_DEMO
         value: "false"
       - key: SGHL_ADMIN_USERNAME
