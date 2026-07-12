@@ -72,6 +72,11 @@ services:
         value: mouangatresor673@gmail.com
       - key: SGHL_ADMIN_PASSWORD
         sync: false
+      # Optionnel : test SMTP au boot (logs Render) — remettre false après validation
+      - key: SGHL_TEST_SMTP
+        value: "false"
+      - key: SGHL_DIAGNOSTIC_KEY
+        sync: false
 
   - type: web
     name: sghl-patient

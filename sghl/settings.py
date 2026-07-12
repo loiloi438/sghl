@@ -144,6 +144,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 SGHL_ETABLISSEMENT = os.getenv('SGHL_ETABLISSEMENT', 'SGHL — Centre Hospitalier')
 SGHL_FRONTEND_URL = os.getenv('SGHL_FRONTEND_URL', 'http://localhost:5173')
+SGHL_DIAGNOSTIC_KEY = os.getenv('SGHL_DIAGNOSTIC_KEY', '').strip()
 SGHL_JITSI_DOMAIN = os.getenv('SGHL_JITSI_DOMAIN', 'meet.jit.si')
 SGHL_JITSI_ROOM_PREFIX = os.getenv('SGHL_JITSI_ROOM_PREFIX', 'sghl-visio')
 SGHL_VISIO_EARLY_MINUTES = int(os.getenv('SGHL_VISIO_EARLY_MINUTES', '15'))

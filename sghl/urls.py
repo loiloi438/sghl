@@ -8,7 +8,7 @@ from django.urls import path, re_path
 from django.conf.urls.static import static
 from django.views.generic import RedirectView, TemplateView
 from api.v1.router import api
-from .views import health_check
+from .views import health_check, health_email_config, health_test_email
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,6 +16,8 @@ urlpatterns = [
     path('api/v1/', api.urls),
     path('', TemplateView.as_view(template_name='index.html'), name='home'),
     path('healthz/', health_check, name='healthz'),
+    path('healthz/email/', health_email_config, name='healthz-email'),
+    path('healthz/test-email/', health_test_email, name='healthz-test-email'),
 ]
 
 if settings.DEBUG:

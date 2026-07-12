@@ -52,6 +52,11 @@ if [ "${SGHL_SEED_DEMO:-false}" = "true" ]; then
   python manage.py seed_demo
 fi
 
+if [ "${SGHL_TEST_SMTP:-false}" = "true" ]; then
+  echo "Test SMTP au boot (SGHL_TEST_SMTP=true) — voir les logs Render…"
+  python manage.py test_smtp --to="${SGHL_TEST_SMTP_TO:-mouangatresor673@gmail.com}" || echo "Échec test SMTP (voir trace ci-dessus)"
+fi
+
 PORT="${PORT:-8000}"
 if [ "$1" = "gunicorn" ]; then
   shift
