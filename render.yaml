@@ -74,6 +74,7 @@ services:
     plan: free
     dockerfilePath: ./mobile/Dockerfile.web
     dockerContext: ./mobile
+    healthCheckPath: /
 
   - type: web
     name: sghl-staff
