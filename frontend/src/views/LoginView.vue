@@ -283,6 +283,7 @@ import { setPortalTheme } from '../composables/useTheme.js'
 import { useAuthStore } from '../stores/auth.js'
 const router = useRouter()
 const route = useRoute()
+const auth = useAuthStore()
 
 const mode = ref('login')
 const formLoading = ref(false)
