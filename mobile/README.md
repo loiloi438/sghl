@@ -1,14 +1,14 @@
 # SGHL — Application mobile
 
-Flutter 3 · **portail patient** complet et **staff RDV** (médecin, infirmier).
+Flutter 3 · **portail patient** complet et **staff RDV** (admin, médecin, infirmier, secrétaire, comptable en lecture).
 
 ## Fonctionnalités livrées
 
 - Authentification JWT + **MFA par e-mail** (personnel)
 - **Inscription patient** + **validation par code e-mail**
-- Navigation principale (accueil, RDV, factures, notifications, profil)
+- Navigation principale (accueil, RDV, messagerie, notifications, profil)
 - Tableau de bord patient (hospitalisation, doses, constantes)
-- Rendez-vous : consultation, création, annulation
+- Rendez-vous : demande en attente, validation secrétariat, confirmation et annulation
 - Prescriptions, laboratoire, plans de soins, constantes, doses
 - **Factures + paiement en ligne** (MTN / Airtel / Stripe simulé)
 - Notifications in-app
@@ -78,5 +78,5 @@ Ou depuis la racine du projet : `scripts/build_apk.ps1`
 Modifier `lib/core/api_config.dart` ou les `--dart-define` au build :
 
 ```powershell
-flutter run --dart-define=SGHL_API_BASE=http://10.0.2.2:8000/api/v1
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
 ```

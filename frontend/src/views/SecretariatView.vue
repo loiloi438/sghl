@@ -5,7 +5,7 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-sm font-semibold text-teal-700">🌿 Secrétariat SGHL</p>
-            <h1 class="mt-1 text-2xl font-bold tracking-tight text-teal-950">Bonjour {{ auth.fullName || 'Samantha' }} 👋</h1>
+            <h1 class="mt-1 text-2xl font-bold tracking-tight text-teal-950">Bonjour {{ auth.fullName || 'Secrétariat' }} 👋</h1>
             <p class="mt-1 text-sm text-slate-600">Rendez-vous, caisse et messagerie patients — tout en un seul endroit.</p>
           </div>
           <button
@@ -143,6 +143,20 @@
       :clinical-actions="false"
       @success="onPanelSuccess"
     />
+    <PromptDialog
+      v-model="cancelDialog.motif"
+      :open="cancelDialog.open"
+      title="Annuler le rendez-vous"
+      :message="cancelDialog.rdv
+        ? `Le patient ${cancelDialog.rdv.patient_nom} recevra le motif de l’annulation.`
+        : ''"
+      input-label="Motif d’annulation"
+      placeholder="Ex. Indisponibilité du créneau"
+      confirm-label="Confirmer l’annulation"
+      :loading="busyId !== null"
+      @confirm="confirmAnnulerRdv"
+      @cancel="closeCancelDialog"
+    />
   </div>
 </template>
 
@@ -150,6 +164,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import api, { getErrorMessage, unwrapList } from '../api/client.js'
+import PromptDialog from '../components/PromptDialog.vue'
 import RdvStaffPanel from '../components/RdvStaffPanel.vue'
 import { useAuthStore } from '../stores/auth.js'
 
@@ -163,10 +178,17 @@ const medecins = ref([])
 const stats = ref({})
 const panelOpen = ref(false)
 const selectedRdv = ref(null)
+const cancelDialog = ref({
+  open: false,
+  motif: 'Indisponibilité du créneau',
+  rdv: null,
+})
+
+const PENDING_RDV_STATUTS = ['en_attente', 'planifie']
 
 const pendingItems = computed(() =>
   items.value
-    .filter((r) => r.statut === 'planifie')
+    .filter((r) => PENDING_RDV_STATUTS.includes(r.statut))
     .sort((a, b) => new Date(a.date_heure) - new Date(b.date_heure)),
 )
 
@@ -188,13 +210,17 @@ async function loadAll() {
   loading.value = true
   error.value = ''
   try {
-    const [statsRes, listRes, medRes] = await Promise.all([
+    const [statsRes, enAttenteRes, planifieRes, medRes] = await Promise.all([
       api.get('/rendez-vous/stats/'),
+      api.get('/rendez-vous/', { params: { statut: 'en_attente' } }),
       api.get('/rendez-vous/', { params: { statut: 'planifie' } }),
       api.get('/rendez-vous/medecins/'),
     ])
     stats.value = statsRes.data
-    items.value = unwrapList(listRes.data)
+    items.value = [
+      ...unwrapList(enAttenteRes.data),
+      ...unwrapList(planifieRes.data),
+    ]
     medecins.value = unwrapList(medRes.data)
   } catch (e) {
     error.value = getErrorMessage(e)
@@ -218,8 +244,22 @@ async function validerRdv(rdv) {
 }
 
 async function annulerRdv(rdv) {
-  const motif = window.prompt('Motif d\'annulation (envoyé au patient) :', 'Indisponibilité du créneau')
-  if (motif === null) return
+  cancelDialog.value = {
+    open: true,
+    motif: 'Indisponibilité du créneau',
+    rdv,
+  }
+}
+
+function closeCancelDialog() {
+  if (busyId.value !== null) return
+  cancelDialog.value.open = false
+  cancelDialog.value.rdv = null
+}
+
+async function confirmAnnulerRdv(motif) {
+  const rdv = cancelDialog.value.rdv
+  if (!rdv) return
   busyId.value = rdv.id
   error.value = ''
   try {
@@ -228,6 +268,8 @@ async function annulerRdv(rdv) {
       motif_annulation: motif.trim() || 'Annulation secrétariat',
     })
     message.value = `Rendez-vous annulé — ${rdv.patient_nom} a été informé(e).`
+    cancelDialog.value.open = false
+    cancelDialog.value.rdv = null
     await loadAll()
   } catch (e) {
     error.value = getErrorMessage(e)

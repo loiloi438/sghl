@@ -45,6 +45,129 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   String? _error;
 
+  Future<void> _editProfil() async {
+    final profil = _profil;
+    if (profil == null) return;
+
+    final telephoneController = TextEditingController(text: profil.telephone);
+    final emailController = TextEditingController(text: profil.email);
+    final adresseController = TextEditingController(text: profil.adresse);
+
+    final updated = await showDialog<PatientProfil>(
+      context: context,
+      builder: (dialogContext) {
+        var saving = false;
+        String? dialogError;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Modifier mes coordonnées'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (dialogError != null) ...[
+                    SghlFeedbackBanner(
+                      message: dialogError!,
+                      type: SghlFeedbackType.error,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  TextField(
+                    controller: telephoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Téléphone',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'E-mail',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: adresseController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Adresse',
+                      prefixIcon: Icon(Icons.home_outlined),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed:
+                    saving ? null : () => Navigator.of(dialogContext).pop(),
+                child: const Text('Annuler'),
+              ),
+              FilledButton.icon(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final email = emailController.text.trim();
+                        if (email.isNotEmpty && !email.contains('@')) {
+                          setDialogState(
+                            () => dialogError = 'Adresse e-mail invalide.',
+                          );
+                          return;
+                        }
+                        setDialogState(() {
+                          saving = true;
+                          dialogError = null;
+                        });
+                        try {
+                          final result = await context
+                              .read<PatientService>()
+                              .updateProfil(
+                                telephone: telephoneController.text,
+                                email: email,
+                                adresse: adresseController.text,
+                              );
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop(result);
+                          }
+                        } catch (e) {
+                          if (dialogContext.mounted) {
+                            setDialogState(() {
+                              saving = false;
+                              dialogError =
+                                  friendlyApiError(e, isPatient: true);
+                            });
+                          }
+                        }
+                      },
+                icon: saving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: const Text('Enregistrer'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    telephoneController.dispose();
+    emailController.dispose();
+    adresseController.dispose();
+    if (!mounted || updated == null) return;
+    setState(() => _profil = updated);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Vos coordonnées ont été mises à jour 💙')),
+    );
+  }
+
 
 
   @override
@@ -112,7 +235,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
       body: SghlHumanCareBackground(
         child: _loading
 
-          ? const Center(child: CircularProgressIndicator())
+          ? const SghlHumanCareHeartLoader(
+              message: 'Chargement de votre profil…',
+            )
 
           : _error != null
 
@@ -321,6 +446,15 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
                         ),
 
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SghlHumanCareButton(
+                        label: 'Modifier mes coordonnées',
+                        icon: Icons.edit_outlined,
+                        compact: true,
+                        onPressed: _editProfil,
                       ),
 
                       if (auth.user != null) ...[

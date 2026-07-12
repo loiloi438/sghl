@@ -1,11 +1,29 @@
 from django.db.models import Q
 from ninja import Router, Schema
+from ninja.errors import HttpError
 
 from accounts.models import Role, User
 from api.v1.auth_backend import JWTAuth
 
 router = Router(tags=['Personnel'])
 jwt_auth = JWTAuth()
+
+ROLES_LECTURE = {
+    Role.ADMIN,
+    Role.MEDECIN,
+    Role.INFIRMIER,
+    Role.BIOLOGISTE,
+    Role.PHARMACIEN,
+    Role.COMPTABLE,
+    Role.SECRETAIRE,
+}
+
+
+def _check_staff_lecture(user: User):
+    if user.role == Role.PATIENT:
+        raise HttpError(403, 'Accès réservé au personnel.')
+    if user.role not in ROLES_LECTURE:
+        raise HttpError(403, 'Accès refusé.')
 
 
 def get_default_profile_photo(user: User) -> str:
@@ -40,7 +58,7 @@ def _serialize_user(user: User) -> PersonnelOut:
         first_name=user.first_name,
         last_name=user.last_name,
         full_name=full_name,
-        email=user.email,
+        email=user.email or '',
         role=user.role,
         role_label=user.get_role_display(),
         mfa_enabled=user.mfa_enabled,
@@ -62,9 +80,11 @@ def _list_personnel(role: str, search: str | None = None):
 
 @router.get('/personnel/medecins/', response=list[PersonnelOut], auth=jwt_auth)
 def list_medecins(request, search: str | None = None):
+    _check_staff_lecture(request.auth)
     return _list_personnel(Role.MEDECIN, search)
 
 
 @router.get('/personnel/infirmiers/', response=list[PersonnelOut], auth=jwt_auth)
 def list_infirmiers(request, search: str | None = None):
+    _check_staff_lecture(request.auth)
     return _list_personnel(Role.INFIRMIER, search)

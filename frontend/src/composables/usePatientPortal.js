@@ -186,6 +186,8 @@ export function rdvStatutLabel(statut) {
 
   const map = {
 
+    en_attente: 'En attente de validation',
+
     planifie: 'Planifié',
 
     confirme: 'Validé',
@@ -200,6 +202,18 @@ export function rdvStatutLabel(statut) {
 
   return map[statut] || statut
 
+}
+
+
+
+export function rdvIsPending(statut) {
+  return statut === 'en_attente' || statut === 'planifie'
+}
+
+
+
+export function rdvPeutAnnuler(statut) {
+  return statut === 'en_attente' || statut === 'planifie' || statut === 'confirme'
 }
 
 

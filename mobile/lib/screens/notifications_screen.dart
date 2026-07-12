@@ -70,7 +70,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
       body: SghlHumanCareBackground(
         child: inbox.loading && inbox.items.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const SghlHumanCareHeartLoader(
+                message: 'Chargement de vos notifications…',
+              )
             : inbox.items.isEmpty
                 ? ListView(
                     padding: EdgeInsets.fromLTRB(16, topPad, 16, bottomPad),

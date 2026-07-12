@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/api_client.dart';
+import '../core/api_errors.dart';
 import '../core/sghl_theme.dart';
 import '../models/patient_models.dart';
 import '../services/patient_services.dart';
@@ -56,8 +56,7 @@ class _PatientPaymentSheetState extends State<PatientPaymentSheet> {
   }
 
   String _errorMessage(Object e) {
-    if (e is ApiException) return e.message;
-    return e.toString();
+    return friendlyApiError(e, isPatient: true);
   }
 
   Future<void> _initiate() async {

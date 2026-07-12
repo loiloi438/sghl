@@ -368,6 +368,19 @@ class PatientService {
     return PatientProfil.fromJson(_api.decodeMap(response));
   }
 
+  Future<PatientProfil> updateProfil({
+    required String telephone,
+    required String email,
+    required String adresse,
+  }) async {
+    final response = await _api.patch('/patient/profil/', {
+      'telephone': telephone.trim(),
+      'email': email.trim(),
+      'adresse': adresse.trim(),
+    });
+    return PatientProfil.fromJson(_api.decodeMap(response));
+  }
+
   Future<RendezVousPatient> creerRendezVous({
     required int medecinId,
     required DateTime dateHeure,

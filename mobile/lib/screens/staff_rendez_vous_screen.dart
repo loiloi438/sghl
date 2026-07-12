@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/patient_models.dart';
 import '../models/staff_models.dart';
 import '../services/patient_services.dart';
+import '../core/api_errors.dart';
 import '../services/staff_services.dart';
 import '../widgets/staff_rdv_manage_sheet.dart';
 
@@ -61,7 +62,7 @@ class _StaffRendezVousScreenState extends State<StaffRendezVousScreen> {
             : <MedecinDispo>[];
       });
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyApiError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

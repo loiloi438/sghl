@@ -171,7 +171,7 @@
           </div>
           <div class="mt-4 flex flex-wrap gap-2">
             <a
-              v-if="rdv.lien_visio"
+              v-if="rdv.statut === 'confirme' && rdv.lien_visio"
               :href="rdv.lien_visio"
               target="_blank"
               rel="noopener noreferrer"
@@ -213,9 +213,9 @@ import { onMounted, reactive, ref } from 'vue'
 import PromptDialog from '../../components/PromptDialog.vue'
 import PatientEmptyState from '../../components/patient/PatientEmptyState.vue'
 import PatientPageHeader from '../../components/patient/PatientPageHeader.vue'
-import api from '../../api/client.js'
+import api, { getErrorMessage, unwrapList } from '../../api/client.js'
 import { showToast } from '../../composables/useToast.js'
-import { rdvStatutLabel, typeConsultationLabel } from '../../composables/usePatientPortal.js'
+import { rdvStatutLabel, rdvPeutAnnuler, typeConsultationLabel } from '../../composables/usePatientPortal.js'
 
 const items = ref([])
 const medecins = ref([])
@@ -258,12 +258,12 @@ function statutLabel(s) {
 function rdvStatutBadgeClass(statut) {
   if (statut === 'confirme') return 'hc-badge--ok'
   if (statut === 'annule') return 'hc-badge--alert'
-  if (statut === 'planifie') return 'hc-badge--pending'
+  if (statut === 'en_attente' || statut === 'planifie') return 'hc-badge--pending'
   return 'hc-badge--done'
 }
 
 function peutAnnuler(statut) {
-  return statut === 'planifie' || statut === 'confirme'
+  return rdvPeutAnnuler(statut)
 }
 
 function toLocalDatetimeInput(iso) {
@@ -296,7 +296,7 @@ async function load() {
     items.value = rdvRes.data.items ?? rdvRes.data ?? []
     medecins.value = medRes.data.items ?? medRes.data ?? []
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Impossible de charger les rendez-vous.'
+    error.value = getErrorMessage(e)
   } finally {
     loading.value = false
   }
@@ -331,8 +331,8 @@ async function createRdv() {
       adresse: form.adresse.trim(),
     })
     message.value = form.type_consultation === 'teleconsultation'
-      ? 'Rendez-vous planifié ✅ Un lien visio sera disponible après validation.'
-      : 'Rendez-vous planifié ✅ Le secrétariat vous confirmera très bientôt.'
+      ? 'Demande envoyée 💙 Lien visio disponible après validation.'
+      : 'Demande envoyée 💙 En attente de validation par le secrétariat.'
     showToast(message.value, 'success')
     form.motif = ''
     form.medecin_id = ''
@@ -340,7 +340,7 @@ async function createRdv() {
     await load()
     await loadProfil()
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Impossible de créer le rendez-vous.'
+    error.value = getErrorMessage(e)
   } finally {
     saving.value = false
   }
@@ -370,7 +370,7 @@ async function confirmAnnuler(motif) {
     showToast('Rendez-vous annulé.', 'success')
     await load()
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Annulation impossible.'
+    error.value = getErrorMessage(e)
   } finally {
     saving.value = false
   }

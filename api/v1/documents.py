@@ -28,6 +28,16 @@ from documents.models import DocumentSigne, TypeDocument
 router = Router(tags=['Documents'])
 jwt_auth = JWTAuth()
 
+ROLES_DOCUMENTS_STAFF = {
+    Role.ADMIN,
+    Role.MEDECIN,
+    Role.INFIRMIER,
+    Role.BIOLOGISTE,
+    Role.PHARMACIEN,
+    Role.COMPTABLE,
+    Role.SECRETAIRE,
+}
+
 
 def _handle_error(exc: DocumentError):
     status_map = {
@@ -131,6 +141,10 @@ def verifier_document_endpoint(request, code: str):
 @router.get('/documents/', response=list[DocumentOut], auth=jwt_auth)
 @paginate
 def list_documents(request, search: str | None = None, type_document: str | None = None):
+    user = request.auth
+    if user.role != Role.PATIENT and user.role not in ROLES_DOCUMENTS_STAFF:
+        raise HttpError(403, 'Accès réservé au personnel autorisé.')
+
     qs = (
         DocumentSigne.objects.select_related(
             'facture__hospitalisation__patient',
@@ -141,6 +155,16 @@ def list_documents(request, search: str | None = None, type_document: str | None
         .all()
         .order_by('-signe_le')
     )
+    if user.role == Role.PATIENT:
+        patient = Patient.objects.filter(compte_utilisateur=user).first()
+        if patient is None:
+            raise HttpError(404, 'Profil patient non rattaché à ce compte.')
+        qs = qs.filter(
+            Q(facture__hospitalisation__patient=patient)
+            | Q(commande_analyse__hospitalisation__patient=patient)
+            | Q(prescription__hospitalisation__patient=patient)
+        )
+
     qs = qs.filter(_documents_q(search))
     if type_document:
         qs = qs.filter(type_document=type_document)

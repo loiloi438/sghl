@@ -4,8 +4,10 @@ import '../core/sghl_theme.dart';
 import '../widgets/sghl_design_system.dart';
 import 'home_screen.dart';
 import 'messagerie_screen.dart';
+import 'notifications_screen.dart';
 import 'profil_screen.dart';
 import 'rendez_vous_screen.dart';
+
 class PatientShell extends StatefulWidget {
   const PatientShell({super.key});
 
@@ -32,6 +34,10 @@ class _PatientShellState extends State<PatientShell> {
       selectedIcon: Icons.chat_bubble_rounded,
     ),
     SghlNavItem(
+      icon: Icons.notifications_none_rounded,
+      selectedIcon: Icons.notifications_rounded,
+    ),
+    SghlNavItem(
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
     ),
@@ -41,6 +47,7 @@ class _PatientShellState extends State<PatientShell> {
     HomeScreen(embedded: true),
     RendezVousScreen(embedded: true),
     MessagerieScreen(embedded: true),
+    NotificationsScreen(embedded: true),
     ProfilScreen(embedded: true),
   ];
 
@@ -48,7 +55,8 @@ class _PatientShellState extends State<PatientShell> {
   Widget build(BuildContext context) {
     return Theme(
       data: SghlTheme.patientHumanCare(),
-      child: Scaffold(        body: Stack(
+      child: Scaffold(
+        body: Stack(
           children: [
             Positioned.fill(
               child: AnimatedSwitcher(

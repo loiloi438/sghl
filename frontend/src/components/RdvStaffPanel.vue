@@ -39,7 +39,7 @@
           <h3>Actions rapides</h3>
           <div class="quick-actions">
             <button
-              v-if="rdv.statut === 'planifie'"
+              v-if="PENDING_RDV_STATUTS.includes(rdv.statut)"
               type="button"
               class="btn btn-primary"
               :disabled="busy"
@@ -57,7 +57,7 @@
               Terminer
             </button>
             <button
-              v-if="clinicalActions && ['planifie', 'confirme'].includes(rdv.statut)"
+              v-if="clinicalActions && ACTIF_RDV_STATUTS.includes(rdv.statut)"
               type="button"
               class="btn btn-secondary"
               :disabled="busy"
@@ -151,12 +151,16 @@ const busy = ref(false)
 const panelError = ref('')
 
 const statutLabels = {
+  en_attente: 'En attente de validation',
   planifie: 'Planifié',
   confirme: 'Validé',
   annule: 'Annulé',
   termine: 'Terminé',
   absent: 'Absent',
 }
+
+const PENDING_RDV_STATUTS = ['en_attente', 'planifie']
+const ACTIF_RDV_STATUTS = ['en_attente', 'planifie', 'confirme']
 
 const form = reactive({
   date_heure: '',
@@ -169,7 +173,7 @@ const form = reactive({
 })
 
 const canAct = computed(() => {
-  return props.rdv && ['planifie', 'confirme'].includes(props.rdv.statut)
+  return props.rdv && ACTIF_RDV_STATUTS.includes(props.rdv.statut)
 })
 
 const initialSnapshot = ref('')

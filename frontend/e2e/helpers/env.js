@@ -47,6 +47,11 @@ export const patientCredentials = {
   password: 'Patient@SGHL2026',
 }
 
+export const secretaryCredentials = {
+  username: 'samantha',
+  password: 'Secretaire@SGHL2026',
+}
+
 const apiPort = process.env.E2E_API_PORT || '8010'
 const webPort = process.env.E2E_WEB_PORT || '5174'
 export const e2eApiBase = process.env.E2E_API_BASE || `http://127.0.0.1:${apiPort}/api/v1`

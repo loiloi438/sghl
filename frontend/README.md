@@ -30,6 +30,7 @@ Le proxy Vite redirige `/api` vers le backend Django.
 | Pharmacien | `pharmacien` | `Pharmacien@SGHL2026` |
 | Comptable | `comptable` | `Comptable@SGHL2026` |
 | Biologiste | `biologiste` | `Biologiste@SGHL2026` |
+| Secrétaire | `samantha` | `Secretaire@SGHL2026` |
 | Admin | `tresormouanga` | *(mot de passe défini au seed)* |
 
 > Les comptes staff avec MFA activé reçoivent un code par e-mail après le mot de passe (HTTP 202 → saisie du code).
@@ -40,7 +41,13 @@ Le proxy Vite redirige `/api` vers le backend Django.
 2. **Validation** du compte par code reçu par e-mail (`/validate-account`).
 3. **Connexion** → redirection automatique vers l'espace patient.
 
-Comptes démo seedés : voir `python manage.py seed_demo` (patients `patient1`, `patient2`, …).
+Compte patient principal : `patient` / `Patient@SGHL2026`.
+
+Le workflow rendez-vous est le suivant :
+
+1. Le patient envoie une demande (`en_attente`).
+2. La secrétaire ou un membre autorisé du personnel la valide.
+3. Le rendez-vous passe à `confirme` et le patient reçoit une notification.
 
 ## Portail patient
 
@@ -106,9 +113,10 @@ Scénarios :
 |---------|----------|
 | `e2e/login.spec.js` | Médecin + MFA e-mail → module Rendez-vous |
 | `e2e/patient-portal.spec.js` | Patient → Mon espace → Mes rendez-vous |
+| `e2e/secretariat-rendez-vous.spec.js` | Patient demande un RDV → secrétaire le valide |
 | `e2e/patient-detail.spec.js` | Staff → liste Patients → fiche dossier |
 | `e2e/visio.spec.js` | Lien `/visio/:token` (public, Jitsi) + module Téléconsultation staff |
 
-Comptes utilisés : `medecin` / `Medecin@SGHL2026`, `patient` / `Patient@SGHL2026`.
+Comptes utilisés : `medecin` / `Medecin@SGHL2026`, `samantha` / `Secretaire@SGHL2026`, `patient` / `Patient@SGHL2026`.
 
 > En local, si un serveur Django tourne déjà sans `EMAIL_BACKEND=locmem`, les tests MFA échoueront — arrêtez-le ou lancez avec `CI=true npm run test:e2e`.

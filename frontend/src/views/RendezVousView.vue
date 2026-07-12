@@ -57,6 +57,7 @@
             <label class="mb-2 block text-sm font-medium text-slate-700" for="filter-statut">Statut</label>
             <select id="filter-statut" v-model="filterStatut" @change="loadList" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500">
               <option value="">Tous</option>
+              <option value="en_attente">En attente</option>
               <option value="planifie">Planifié</option>
               <option value="confirme">Validé</option>
               <option value="termine">Terminé</option>
@@ -142,7 +143,7 @@
                 <td class="px-3 py-3"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">{{ statutLabel(rdv.statut) }}</span></td>
                 <td v-if="auth.canRdv" class="px-3 py-3">
                   <button
-                    v-if="['planifie', 'confirme'].includes(rdv.statut)"
+                    v-if="['en_attente', 'planifie', 'confirme'].includes(rdv.statut)"
                     type="button"
                     class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                     @click="openStaffPanel(rdv)"
@@ -201,6 +202,7 @@ const form = reactive({
 })
 
 const statutLabels = {
+  en_attente: 'En attente de validation',
   planifie: 'Planifié',
   confirme: 'Validé',
   annule: 'Annulé',

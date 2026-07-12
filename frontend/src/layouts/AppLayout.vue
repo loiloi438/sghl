@@ -23,7 +23,11 @@
         </div>
       </div>
 
-      <SidebarNav :navigation="navigation" @navigate="menuOpen = false" />
+      <SidebarNav
+        :navigation="navigation"
+        :notification-count="notificationCount"
+        @navigate="menuOpen = false"
+      />
 
       <div class="sidebar-footer">
         <RouterLink to="/profil" class="user-card user-card--link" @click="menuOpen = false">
@@ -65,8 +69,9 @@
 </template>
 
 <script setup>
-import { computed, ref, Transition, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, Transition, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import api from '../api/client.js'
 import SidebarNav from '../components/SidebarNav.vue'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import { useNavigation } from '../composables/useNavigation.js'
@@ -78,6 +83,8 @@ const { navigation } = useNavigation()
 const router = useRouter()
 const route = useRoute()
 const menuOpen = ref(false)
+const notificationCount = ref(0)
+let notificationTimer = null
 
 const roleLabels = {
   admin: 'Administrateur',
@@ -108,8 +115,29 @@ watch(
   () => route.path,
   () => {
     menuOpen.value = false
+    refreshNotificationCount()
   },
 )
+
+async function refreshNotificationCount() {
+  try {
+    const { data } = await api.get('/notifications/non-lues/')
+    notificationCount.value = data.count ?? 0
+  } catch {
+    notificationCount.value = 0
+  }
+}
+
+onMounted(() => {
+  refreshNotificationCount()
+  notificationTimer = window.setInterval(refreshNotificationCount, 60000)
+})
+
+onBeforeUnmount(() => {
+  if (notificationTimer !== null) {
+    window.clearInterval(notificationTimer)
+  }
+})
 
 async function logout() {
   await auth.logout()

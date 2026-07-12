@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/staff_models.dart';
 import '../services/patient_services.dart';
+import '../core/api_errors.dart';
 import '../services/staff_services.dart';
 import 'login_screen.dart';
 import 'staff_rendez_vous_screen.dart';
@@ -36,7 +37,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       final stats = await context.read<RendezVousStaffService>().fetchStats();
       if (mounted) setState(() => _stats = stats);
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyApiError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -58,6 +59,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
         return 'Infirmier(ère)';
       case 'comptable':
         return 'Comptable';
+      case 'secretaire':
+        return 'Secrétaire';
       default:
         return role;
     }

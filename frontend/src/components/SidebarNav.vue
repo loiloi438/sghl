@@ -32,6 +32,10 @@
             >
               <NavIcon :name="child.icon" />
               <span>{{ child.label }}</span>
+              <span
+                v-if="child.to === '/notifications' && notificationCount > 0"
+                class="nav-count-badge"
+              >{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
               <span v-if="child.placeholder" class="nav-badge">Bientôt</span>
             </RouterLink>
           </div>
@@ -44,6 +48,10 @@
           >
             <NavIcon :name="item.icon" />
             <span>{{ item.label }}</span>
+            <span
+              v-if="item.to === '/notifications' && notificationCount > 0"
+              class="nav-count-badge"
+            >{{ notificationCount > 99 ? '99+' : notificationCount }}</span>
             <span v-if="item.placeholder" class="nav-badge">Bientôt</span>
           </RouterLink>
         </template>
@@ -59,6 +67,7 @@ import NavIcon from './NavIcon.vue'
 
 const props = defineProps({
   navigation: { type: Array, required: true },
+  notificationCount: { type: Number, default: 0 },
 })
 
 const emit = defineEmits(['navigate'])
@@ -198,5 +207,21 @@ for (const section of props.navigation) {
   background: var(--color-warning-light);
   color: var(--color-warning);
   border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.nav-count-badge {
+  margin-left: auto;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-danger, #dc2626);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
 }
 </style>

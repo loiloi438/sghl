@@ -56,6 +56,14 @@ class ApiClient {
     return _request('POST', path, auth: auth, body: body);
   }
 
+  Future<http.Response> patch(
+    String path,
+    Map<String, dynamic> body, {
+    bool auth = true,
+  }) {
+    return _request('PATCH', path, auth: auth, body: body);
+  }
+
   /// Réveille l'API Render (cold start) avant une connexion.
   Future<void> warmUp({int attempts = 3}) async {
     Object? lastError;
@@ -113,7 +121,6 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool binary = false,
   }) async {
-    Object? lastError;
     for (var attempt = 0; attempt <= _networkRetryDelays.length; attempt++) {
       try {
         return await _performRequest(
@@ -123,15 +130,15 @@ class ApiClient {
           body: body,
           binary: binary,
         );
-      } on ApiException catch (e) {
+      } on ApiException {
         rethrow;
-      } on TimeoutException catch (e) {
-        lastError = e;
-      } on http.ClientException catch (e) {
-        lastError = e;
+      } on TimeoutException {
+        // Réessai progressif, notamment pendant le réveil de Render.
+      } on http.ClientException {
+        // Réessai progressif sur les erreurs réseau navigateur/mobile.
       } catch (e) {
         if (isNetworkError(e)) {
-          lastError = e;
+          // Réessai progressif sur toute autre erreur réseau reconnue.
         } else {
           rethrow;
         }
@@ -159,30 +166,45 @@ class ApiClient {
     final headers = await _headers(auth: auth, binary: binary);
 
     http.Response response;
-    if (method == 'GET') {
-      response = await http.get(uri, headers: headers).timeout(_requestTimeout);
-    } else {
-      response = await http
-          .post(uri, headers: headers, body: jsonEncode(body))
-          .timeout(_requestTimeout);
-    }
+    response = await _send(
+      method,
+      uri,
+      headers: headers,
+      body: body,
+    );
 
     if (response.statusCode == 401 && auth) {
       final refreshed = await _refreshAccessToken();
       if (refreshed) {
         final retryHeaders = await _headers(auth: true, binary: binary);
-        if (method == 'GET') {
-          response =
-              await http.get(uri, headers: retryHeaders).timeout(_requestTimeout);
-        } else {
-          response = await http
-              .post(uri, headers: retryHeaders, body: jsonEncode(body))
-              .timeout(_requestTimeout);
-        }
+        response = await _send(
+          method,
+          uri,
+          headers: retryHeaders,
+          body: body,
+        );
       }
     }
 
     return response;
+  }
+
+  Future<http.Response> _send(
+    String method,
+    Uri uri, {
+    required Map<String, String> headers,
+    Map<String, dynamic>? body,
+  }) {
+    final encodedBody = body == null ? null : jsonEncode(body);
+    return switch (method) {
+      'GET' => http.get(uri, headers: headers).timeout(_requestTimeout),
+      'PATCH' => http
+          .patch(uri, headers: headers, body: encodedBody)
+          .timeout(_requestTimeout),
+      _ => http
+          .post(uri, headers: headers, body: encodedBody)
+          .timeout(_requestTimeout),
+    };
   }
 
   Future<bool> _refreshAccessToken() async {

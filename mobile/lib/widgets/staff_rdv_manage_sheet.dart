@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/patient_models.dart';
 import '../models/staff_models.dart';
+import '../core/api_errors.dart';
 import '../services/staff_services.dart';
 
 class StaffRdvManageSheet extends StatefulWidget {
@@ -134,7 +135,7 @@ class _StaffRdvManageSheetState extends State<StaffRdvManageSheet> {
         const SnackBar(content: Text('Rendez-vous mis à jour.')),
       );
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyApiError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -168,7 +169,7 @@ class _StaffRdvManageSheetState extends State<StaffRdvManageSheet> {
         const SnackBar(content: Text('Modification enregistrée — patient notifié si e-mail renseigné.')),
       );
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyApiError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -198,7 +199,7 @@ class _StaffRdvManageSheetState extends State<StaffRdvManageSheet> {
         const SnackBar(content: Text('Rendez-vous annulé.')),
       );
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = friendlyApiError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

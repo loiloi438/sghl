@@ -408,3 +408,41 @@ class StaffMfaLoginTests(TestCase):
             json={'username': 'patient_inactif', 'password': 'Patient@SGHL2026'},
         )
         self.assertEqual(login_res.status_code, 403, login_res.content)
+
+
+class PersonnelPermissionsTests(TestCase):
+    def setUp(self):
+        from ninja.testing import TestClient
+
+        from api.v1.router import api
+
+        self.client = TestClient(api)
+        self.medecin = User.objects.create_user(
+            username='medecin_personnel',
+            password='x',
+            role=Role.MEDECIN,
+        )
+        self.patient = User.objects.create_user(
+            username='patient_personnel',
+            password='x',
+            role=Role.PATIENT,
+        )
+
+    def test_patient_ne_peut_pas_lister_le_personnel(self):
+        from accounts.test_helpers import auth_headers
+
+        response = self.client.get(
+            '/personnel/medecins/',
+            headers=auth_headers(self.patient),
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_staff_peut_lister_les_medecins(self):
+        from accounts.test_helpers import auth_headers
+
+        response = self.client.get(
+            '/personnel/medecins/',
+            headers=auth_headers(self.medecin),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]['username'], self.medecin.username)

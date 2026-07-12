@@ -111,7 +111,7 @@ class DocumentAPITests(TestCase):
         service = Service.objects.create(batiment=batiment, code='MED', nom='Médecine')
         chambre = Chambre.objects.create(service=service, numero='902')
         lit = Lit.objects.create(chambre=chambre, numero='1')
-        patient = Patient.objects.create(
+        self.patient = Patient.objects.create(
             numero_dossier='P-PDF-API',
             nom='Api',
             prenom='Pdf',
@@ -120,7 +120,7 @@ class DocumentAPITests(TestCase):
             consentement_donnees=True,
         )
         hospitalisation = admettre_patient(
-            patient=patient,
+            patient=self.patient,
             lit=lit,
             motif_admission='Séjour',
             lit_version=lit.version,
@@ -157,3 +157,23 @@ class DocumentAPITests(TestCase):
         self.assertEqual(items[0]['id'], str(doc.id))
         self.assertEqual(items[0]['download_path'], f'/facturation/factures/{self.facture.id}/pdf/')
         self.assertEqual(items[0]['verification_path'], f'/documents/verifier/{doc.code_verification}/')
+
+    def test_patient_ne_liste_que_ses_documents(self):
+        obtenir_pdf_facture(facture=self.facture, demandeur=self.comptable)
+        patient_user = User.objects.create_user(
+            username='patient_pdf_api',
+            password='Patient@SGHL2026',
+            role=Role.PATIENT,
+        )
+        self.patient.compte_utilisateur = patient_user
+        self.patient.save(update_fields=['compte_utilisateur'])
+
+        response = self.client.get(
+            '/documents/',
+            headers=auth_headers(patient_user),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        items = response.json().get('items', [])
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['patient_dossier'], self.patient.numero_dossier)
