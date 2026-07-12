@@ -1,11 +1,14 @@
 import 'dart:html' as html;
 
+String _normalizedHost() =>
+    (html.window.location.hostname ?? '').toLowerCase();
+
 bool get isLocalWebHost {
-  final host = html.window.location.hostname.toLowerCase();
+  final host = _normalizedHost();
   return host.isEmpty || host == 'localhost' || host == '127.0.0.1';
 }
 
-String get currentWebHostname => html.window.location.hostname.toLowerCase();
+String get currentWebHostname => _normalizedHost();
 
 String? readWebConfiguredApiBaseUrl() {
   final meta = html.document.querySelector('meta[name="sghl-api-base"]');
