@@ -1,12 +1,13 @@
-# Blueprint Render — SGHL
-# Dashboard Render → New → Blueprint → connecter loiloi438/sghl
-# Puis renseigner SGHL_ADMIN_PASSWORD dans l'API avant le premier déploiement.
+# Blueprint Render — SGHL (API + PostgreSQL + frontend statique)
+# Render Dashboard → New → Blueprint → repo loiloi438/sghl
+# Renseigner SGHL_ADMIN_PASSWORD avant le premier déploiement.
 
 databases:
   - name: sghl-db
     plan: free
     databaseName: sghl
     user: sghl
+    # PostgreSQL 16 managé — migrations auto au boot via deploy/docker-entrypoint.sh
 
 services:
   - type: web
@@ -32,26 +33,10 @@ services:
         value: https://sghl-staff.onrender.com
       - key: DB_ENGINE
         value: postgresql
-      - key: DB_HOST
+      - key: DATABASE_URL
         fromDatabase:
           name: sghl-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: sghl-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: sghl-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: sghl-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: sghl-db
-          property: password
+          property: connectionString
       - key: OTP_MODE
         value: development
       - key: EMAIL_BACKEND

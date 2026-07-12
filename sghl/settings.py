@@ -83,19 +83,35 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sghl.wsgi.application'
 
+def _postgres_database():
+    database_url = os.getenv('DATABASE_URL', '').strip()
+    if database_url:
+        from urllib.parse import unquote, urlparse
+
+        parsed = urlparse(database_url)
+        return {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(parsed.path.lstrip('/')),
+            'USER': unquote(parsed.username or ''),
+            'PASSWORD': unquote(parsed.password or ''),
+            'HOST': parsed.hostname or '',
+            'PORT': str(parsed.port or '5432'),
+        }
+
+    return {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'sghl'),
+        'USER': os.getenv('DB_USER', 'sghl'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'sghl'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
+
+
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite')
 
-if DB_ENGINE == 'postgresql':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME', 'sghl'),
-            'USER': os.getenv('DB_USER', 'sghl'),
-            'PASSWORD': os.getenv('DB_PASSWORD', 'sghl'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '5432'),
-        }
-    }
+if os.getenv('DATABASE_URL', '').strip() or DB_ENGINE == 'postgresql':
+    DATABASES = {'default': _postgres_database()}
 else:
     _sqlite_name = os.getenv('SQLITE_NAME', 'db.sqlite3')
     DATABASES = {
