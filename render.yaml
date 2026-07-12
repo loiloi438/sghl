@@ -40,6 +40,10 @@ services:
           property: connectionString
       - key: OTP_MODE
         value: production
+      - key: MFA_EMAIL_ASYNC
+        value: "True"
+      - key: EMAIL_TIMEOUT
+        value: "15"
       - key: EMAIL_NOTIFICATIONS_ENABLED
         value: "True"
       - key: EMAIL_BACKEND

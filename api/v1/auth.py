@@ -8,7 +8,7 @@ from django.db import transaction
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
-from accounts.emails import notifier_mfa_active, notifier_mfa_code
+from accounts.emails import envoyer_mfa_code_async, notifier_mfa_active, notifier_mfa_code
 from accounts.jwt_service import (
     create_access_token,
     create_refresh_token,
@@ -142,10 +142,12 @@ def login(request, payload: LoginIn):
             code = get_random_string(length=6, allowed_chars='0123456789')
             hash_ = make_password(code)
             AccountValidation.objects.create(user=user, code_hash=hash_)
-            # send code via email (or SMS resolver in notifier)
-            sent = notifier_mfa_code(user.id, code)
-            if not sent and is_otp_production():
-                raise HttpError(500, 'Impossible d\'envoyer le code MFA. Contactez l\'administrateur.')
+            if getattr(settings, 'MFA_EMAIL_ASYNC', False):
+                envoyer_mfa_code_async(user.id, code)
+            else:
+                sent = notifier_mfa_code(user.id, code)
+                if not sent and is_otp_production():
+                    raise HttpError(500, 'Impossible d\'envoyer le code MFA. Contactez l\'administrateur.')
             raise HttpError(202, 'MFA_REQUIRED')
     # Non-patient users without MFA enabled receive a warning but are allowed to login (they should enable MFA)
     clear_login_failures(ip, payload.username)

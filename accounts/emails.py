@@ -1,6 +1,8 @@
 import logging
+import threading
 
 from django.conf import settings
+from django.db import transaction
 
 from accounts.models import User
 from core.email_utils import (
@@ -165,6 +167,20 @@ def notifier_validation_code_user(user_id: int, code: str) -> bool:
             'code_validation': code,
         },
     )
+
+
+def envoyer_mfa_code_async(user_id: int, code: str) -> None:
+    """Envoie le code MFA sans bloquer la requête HTTP (prod Render / SMTP lent)."""
+
+    def _send() -> None:
+        sent = notifier_mfa_code(user_id, code)
+        if not sent and is_otp_production():
+            logger.error('Échec envoi code MFA pour user %s', user_id)
+
+    if getattr(settings, 'MFA_EMAIL_ASYNC', False):
+        transaction.on_commit(lambda: threading.Thread(target=_send, daemon=True).start())
+    else:
+        _send()
 
 
 def notifier_mfa_code(user_id: int, code: str) -> bool:

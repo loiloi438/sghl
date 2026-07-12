@@ -129,8 +129,13 @@ export const useAuthStore = defineStore('auth', {
         }
         const detail = error.response?.data?.detail
         if (!error.response) {
-          this.error =
-            'Connexion impossible : l\'API ne répond pas (attendez 1 min si le serveur redémarre).'
+          if (error.code === 'ECONNABORTED') {
+            this.error =
+              'Connexion trop lente : le serveur met du temps à démarrer. Réessayez dans 1 minute.'
+          } else {
+            this.error =
+              'Connexion impossible : l\'API ne répond pas (attendez 1 min si le serveur redémarre).'
+          }
         } else if (error.response?.status === 401) {
           if (detail === 'Code MFA requis ou invalide.') {
             this.error = 'Code MFA requis ou invalide (Google Authenticator).'

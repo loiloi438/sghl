@@ -215,6 +215,11 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('1', 'true', 'yes')
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '15'))
+MFA_EMAIL_ASYNC = os.getenv(
+    'MFA_EMAIL_ASYNC',
+    'False' if DEBUG else 'True',
+).lower() in ('1', 'true', 'yes')
 
 # Notifications push (FCM + boîte in-app patient)
 PUSH_NOTIFICATIONS_ENABLED = os.getenv('PUSH_NOTIFICATIONS_ENABLED', 'True').lower() in (
