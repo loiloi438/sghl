@@ -35,6 +35,7 @@ class ServerSettingsCardState extends State<ServerSettingsCard> {
 
   /// Enregistre l'URL saisie. Retourne false si invalide ou vide.
   Future<bool> persistServerUrl(BuildContext context) async {
+    if (!ApiConfig.showServerSettings) return true;
     final raw = _controller.text.trim();
     if (raw.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,6 +69,9 @@ class ServerSettingsCardState extends State<ServerSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (!ApiConfig.showServerSettings) {
+      return const SizedBox.shrink();
+    }
     return SghlCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
