@@ -122,13 +122,16 @@ export const useAuthStore = defineStore('auth', {
         return await this.applyTokens(data.access_token, data.refresh_token)
       } catch (error) {
         // handle MFA required (202) for unusual axios config or server behavior
-        if (error.response?.status === 202) {
+        if (error.response?.status === 202 || error.response?.data?.detail === 'MFA_REQUIRED') {
           this.pendingMfa = { username }
           this.loading = false
           return 'mfa_required'
         }
         const detail = error.response?.data?.detail
-        if (error.response?.status === 401) {
+        if (!error.response) {
+          this.error =
+            'Connexion impossible : l\'API ne répond pas (attendez 1 min si le serveur redémarre).'
+        } else if (error.response?.status === 401) {
           if (detail === 'Code MFA requis ou invalide.') {
             this.error = 'Code MFA requis ou invalide (Google Authenticator).'
           } else if (
@@ -138,6 +141,8 @@ export const useAuthStore = defineStore('auth', {
           } else {
             this.error = 'Identifiants invalides.'
           }
+        } else if (error.response?.status === 500 && detail?.includes('code MFA')) {
+          this.error = detail
         } else {
           this.error = detail || 'Connexion impossible.'
         }

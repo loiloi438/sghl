@@ -44,9 +44,13 @@ services:
       - key: SGHL_SEED_ADMIN
         value: "true"
       - key: SGHL_SEED_DEMO
-        value: "true"
+        value: "false"
       - key: SGHL_ADMIN_USERNAME
-        value: admin
+        value: tresormouanga
+      - key: SGHL_ADMIN_EMAIL
+        value: mouangatresor673@gmail.com
+      - key: SGHL_ADMIN_RESET_PASSWORD
+        value: "true"
       - key: SGHL_ADMIN_PASSWORD
         sync: false
 
