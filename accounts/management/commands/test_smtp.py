@@ -20,8 +20,11 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f'Backend : {settings.EMAIL_BACKEND}')
-        self.stdout.write(f'Hôte    : {settings.EMAIL_HOST}:{settings.EMAIL_PORT}')
-        self.stdout.write(f'User    : {settings.EMAIL_HOST_USER}')
+        if getattr(settings, 'BREVO_API_KEY', '').strip():
+            self.stdout.write('Provider: Brevo (API HTTP — compatible Render free)')
+        else:
+            self.stdout.write(f'Hôte    : {settings.EMAIL_HOST}:{settings.EMAIL_PORT}')
+            self.stdout.write(f'User    : {settings.EMAIL_HOST_USER}')
         self.stdout.write(f'From    : {settings.DEFAULT_FROM_EMAIL}')
         self.stdout.write(f'OTP     : {getattr(settings, "OTP_MODE", "?")}')
         self.stdout.write(f'Envoi test → {destinataire}…')

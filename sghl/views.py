@@ -18,10 +18,12 @@ def health_check(request):
 def health_email_config(request):
     """Diagnostic e-mail (sans secret) — vérifie que SMTP est configuré sur Render."""
     password = (getattr(settings, 'EMAIL_HOST_PASSWORD', '') or '').strip()
+    brevo = (getattr(settings, 'BREVO_API_KEY', '') or '').strip()
     return JsonResponse({
         'status': 'ok',
         'otp_mode': getattr(settings, 'OTP_MODE', ''),
         'email_backend': settings.EMAIL_BACKEND,
+        'email_provider': 'brevo' if brevo else 'smtp',
         'email_host': settings.EMAIL_HOST,
         'email_port': settings.EMAIL_PORT,
         'email_user': settings.EMAIL_HOST_USER,
@@ -29,6 +31,7 @@ def health_email_config(request):
         'notifications_enabled': getattr(settings, 'EMAIL_NOTIFICATIONS_ENABLED', True),
         'password_configured': bool(password),
         'password_length': len(password),
+        'brevo_api_key_configured': bool(brevo),
     })
 
 

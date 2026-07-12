@@ -47,19 +47,9 @@ services:
       - key: EMAIL_NOTIFICATIONS_ENABLED
         value: "True"
       - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
-      - key: EMAIL_HOST
-        value: smtp.gmail.com
-      - key: EMAIL_PORT
-        value: "587"
-      - key: EMAIL_HOST_USER
-        value: mouangatresor673@gmail.com
-      - key: EMAIL_HOST_PASSWORD
+        value: core.email_backends.brevo.BrevoEmailBackend
+      - key: BREVO_API_KEY
         sync: false
-      - key: EMAIL_USE_TLS
-        value: "True"
-      - key: EMAIL_USE_SSL
-        value: "False"
       - key: DEFAULT_FROM_EMAIL
         value: mouangatresor673@gmail.com
       - key: SGHL_SEED_ADMIN

@@ -206,10 +206,11 @@ if OTP_MODE not in {'development', 'production'}:
     OTP_MODE = 'production'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@sghl.local')
 SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
-EMAIL_BACKEND = os.getenv(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend',
-)
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '').strip()
+_default_email_backend = 'django.core.mail.backends.console.EmailBackend'
+if BREVO_API_KEY:
+    _default_email_backend = 'core.email_backends.brevo.BrevoEmailBackend'
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', _default_email_backend)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
