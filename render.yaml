@@ -1,6 +1,7 @@
 # Blueprint Render — SGHL (API + PostgreSQL + frontend statique)
 # Render Dashboard → New → Blueprint → repo loiloi438/sghl
-# Renseigner SGHL_ADMIN_PASSWORD avant le premier déploiement.
+# Renseigner SGHL_ADMIN_PASSWORD et EMAIL_HOST_PASSWORD (app password Gmail)
+# avant le premier déploiement. MFA OTP envoyé par e-mail (OTP_MODE=production).
 
 databases:
   - name: sghl-db
@@ -38,19 +39,33 @@ services:
           name: sghl-db
           property: connectionString
       - key: OTP_MODE
-        value: development
+        value: production
+      - key: EMAIL_NOTIFICATIONS_ENABLED
+        value: "True"
       - key: EMAIL_BACKEND
-        value: django.core.mail.backends.console.EmailBackend
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        value: mouangatresor673@gmail.com
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_USE_SSL
+        value: "False"
+      - key: DEFAULT_FROM_EMAIL
+        value: mouangatresor673@gmail.com
       - key: SGHL_SEED_ADMIN
-        value: "true"
+        value: "false"
       - key: SGHL_SEED_DEMO
         value: "false"
       - key: SGHL_ADMIN_USERNAME
         value: tresormouanga
       - key: SGHL_ADMIN_EMAIL
         value: mouangatresor673@gmail.com
-      - key: SGHL_ADMIN_RESET_PASSWORD
-        value: "true"
       - key: SGHL_ADMIN_PASSWORD
         sync: false
 
