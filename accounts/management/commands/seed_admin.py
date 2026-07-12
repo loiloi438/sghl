@@ -33,11 +33,16 @@ class Command(BaseCommand):
             )
 
         user = User.objects.filter(username=username).first()
+        if user is None and email:
+            user = User.objects.filter(email=email).first()
+            if user is not None and user.username != username:
+                user.username = username
+
         created = user is None
 
         if created:
             secret = generate_secret()
-            user = User.objects.create(
+            user = User(
                 username=username,
                 email=email,
                 role=Role.ADMIN,
@@ -52,6 +57,8 @@ class Command(BaseCommand):
             user.is_active = True
             user.save()
         else:
+            if email and email != user.email:
+                User.objects.filter(email=email).exclude(pk=user.pk).update(email=None)
             user.email = email
             user.role = Role.ADMIN
             user.is_staff = True
