@@ -1,14 +1,41 @@
 import 'dart:convert';
 
 import 'api_client.dart';
+import 'api_session.dart';
 
-String friendlyNetworkError() {
+const kStaffOnlyMessage =
+    'Cette fonctionnalité est réservée au personnel médical 💙';
+
+String friendlyNetworkError({bool serverWaking = false}) {
+  if (serverWaking) {
+    return 'Le service SGHL se réveille… Réessayez dans quelques secondes 💙';
+  }
   return 'Connexion momentanément indisponible. Vérifiez votre réseau et réessayez dans quelques instants.';
 }
 
-String friendlyHttpError(int statusCode, String body) {
-  if (statusCode == 401 || statusCode == 403) {
-    return 'Identifiants incorrects ou session expirée.';
+String friendlyLoginError(int statusCode, String body) {
+  if (statusCode == 401) {
+    return 'Identifiants incorrects. Vérifiez votre identifiant et mot de passe.';
+  }
+  if (statusCode == 403) {
+    return _humanizeMessage(
+      friendlyHttpError(statusCode, body, isPatient: true),
+      isPatient: true,
+    );
+  }
+  return friendlyHttpError(statusCode, body, isPatient: true);
+}
+
+String friendlyHttpError(int statusCode, String body, {bool? isPatient}) {
+  final patient = isPatient ?? ApiSession.isPatient;
+
+  if (statusCode == 401) {
+    return patient
+        ? 'Votre session a expiré. Reconnectez-vous pour continuer 💙'
+        : 'Session expirée. Reconnectez-vous.';
+  }
+  if (statusCode == 403) {
+    return patient ? kStaffOnlyMessage : 'Accès refusé pour votre rôle.';
   }
   if (statusCode == 404) {
     return 'Service momentanément indisponible. Réessayez plus tard.';
@@ -21,16 +48,18 @@ String friendlyHttpError(int statusCode, String body) {
     final data = jsonDecode(body);
     if (data is Map<String, dynamic>) {
       final raw = (data['detail'] ?? data['message'] ?? data['error'] ?? '').toString();
-      if (raw.isNotEmpty) return _humanizeMessage(raw);
+      if (raw.isNotEmpty) {
+        return _humanizeMessage(raw, isPatient: patient);
+      }
     }
   } catch (_) {}
 
   return 'Une erreur est survenue. Veuillez réessayer.';
 }
 
-String friendlyApiError(Object error) {
+String friendlyApiError(Object error, {bool? isPatient}) {
   if (error is ApiException) {
-    return _humanizeMessage(error.message);
+    return _humanizeMessage(error.message, isPatient: isPatient);
   }
 
   final text = error.toString().toLowerCase();
@@ -40,9 +69,10 @@ String friendlyApiError(Object error) {
   if (text.startsWith('apiexception:')) {
     return _humanizeMessage(
       text.replaceFirst('apiexception:', '').trim(),
+      isPatient: isPatient,
     );
   }
-  return _humanizeMessage(error.toString());
+  return _humanizeMessage(error.toString(), isPatient: isPatient);
 }
 
 bool isNetworkError(Object error) {
@@ -65,10 +95,27 @@ bool isNetworkErrorText(String text) {
       text.contains('runserver');
 }
 
-String _humanizeMessage(String message) {
+String _humanizeMessage(String message, {bool? isPatient}) {
+  final patient = isPatient ?? ApiSession.isPatient;
   final lower = message.toLowerCase();
+
   if (isNetworkErrorText(lower)) {
     return friendlyNetworkError();
+  }
+  if (lower.contains('unauthorized') ||
+      lower.contains('non autoris') ||
+      lower.contains('not authenticated')) {
+    return patient
+        ? 'Votre session a expiré. Reconnectez-vous pour continuer 💙'
+        : 'Session expirée. Reconnectez-vous.';
+  }
+  if (lower.contains('forbidden') ||
+      lower.contains('accès refusé') ||
+      lower.contains('acces refuse') ||
+      lower.contains('permission') ||
+      lower.contains('réservé') ||
+      lower.contains('reserve')) {
+    return patient ? kStaffOnlyMessage : 'Accès refusé pour votre rôle.';
   }
   if (lower.contains('invalid') ||
       lower.contains('incorrect') ||

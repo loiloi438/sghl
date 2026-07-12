@@ -30,7 +30,11 @@ class RendezVousError(Exception):
         super().__init__(message)
 
 
-ACTIFS = {StatutRendezVous.PLANIFIE, StatutRendezVous.CONFIRME}
+ACTIFS = {
+    StatutRendezVous.EN_ATTENTE,
+    StatutRendezVous.PLANIFIE,
+    StatutRendezVous.CONFIRME,
+}
 
 
 def assert_staff(user: User):
@@ -104,6 +108,11 @@ def creer_rendez_vous(
 
     _verifier_creneau(medecin=medecin, date_heure=date_heure, duree_minutes=duree_minutes)
 
+    statut_initial = (
+        StatutRendezVous.EN_ATTENTE
+        if auteur.role == Role.PATIENT
+        else StatutRendezVous.PLANIFIE
+    )
     rdv = RendezVous.objects.create(
         patient=patient,
         medecin=medecin,
@@ -112,7 +121,7 @@ def creer_rendez_vous(
         motif=motif,
         notes=notes,
         cree_par=auteur,
-        statut=StatutRendezVous.PLANIFIE,
+        statut=statut_initial,
         type_consultation=type_consultation,
         lien_visio=lien_visio,
     )
@@ -131,8 +140,11 @@ def confirmer_rendez_vous(*, rdv: RendezVous, auteur: User, version: int) -> Ren
     r = RendezVous.objects.select_for_update().get(pk=rdv.pk)
     if r.version != version:
         raise RendezVousError('Conflit de version : rechargez et réessayez.', code='version_conflict')
-    if r.statut != StatutRendezVous.PLANIFIE:
-        raise RendezVousError('Seul un rendez-vous planifié peut être confirmé.', code='statut_invalide')
+    if r.statut not in {StatutRendezVous.EN_ATTENTE, StatutRendezVous.PLANIFIE}:
+        raise RendezVousError(
+            'Seul un rendez-vous en attente ou planifié peut être confirmé.',
+            code='statut_invalide',
+        )
 
     r.statut = StatutRendezVous.CONFIRME
     r.confirme_le = timezone.now()

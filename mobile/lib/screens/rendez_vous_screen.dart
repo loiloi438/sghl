@@ -10,6 +10,7 @@ import '../models/patient_models.dart';
 import '../services/patient_services.dart';
 import '../widgets/sghl_design_system.dart';
 import '../widgets/human_care_widgets.dart';
+import '../widgets/rdv_status_chip.dart';
 
 class RendezVousScreen extends StatefulWidget {
   const RendezVousScreen({super.key, this.embedded = false});
@@ -168,17 +169,17 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
         SnackBar(
           content: Text(
             isTeleconsultation
-                ? 'Rendez-vous planifié ✅ Lien visio après validation.'
-                : 'Rendez-vous planifié ✅ Le secrétariat vous confirmera bientôt.',
+                ? 'Demande envoyée 💙 En attente de validation — le lien visio sera disponible après confirmation.'
+                : 'Demande envoyée 💙 En attente de validation par le secrétariat.',
           ),
         ),
       );
       await _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyApiError(e))),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -218,9 +219,9 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
       await _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyApiError(e))),
+        );
       }
     }
   }
@@ -273,7 +274,9 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
         child: Stack(
           children: [
             _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const SghlHumanCareHeartLoader(
+                  message: 'Chargement de vos rendez-vous…',
+                )
               : RefreshIndicator(
                   onRefresh: _load,
                   child: _error != null
@@ -384,17 +387,29 @@ class _RendezVousScreenState extends State<RendezVousScreen> {
                                                       ),
                                                     ),
                                                   ),
-                                                Chip(
-                                                  label: Text(rdv.statutLabel),
-                                                ),
+                                                SghlRdvStatusChip(statut: rdv.statut),
                                               ],
                                             ),
                                             const SizedBox(height: 6),
                                             Text(_formatDate(rdv.dateHeure)),
                                             const SizedBox(height: 4),
                                             Text(rdv.motif),
-                                            if (rdv.hasVisioLink &&
-                                                rdv.peutAnnuler) ...[
+                                            if (rdv.isPendingValidation) ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Votre demande sera validée par le secrétariat 💙',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: const Color(
+                                                        0xFFC2410C,
+                                                      ),
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ],
+                                            if (rdv.canJoinVisio) ...[
                                               const SizedBox(height: 10),
                                               Align(
                                                 alignment:

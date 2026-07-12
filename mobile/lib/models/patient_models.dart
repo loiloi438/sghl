@@ -521,12 +521,19 @@ class RendezVousPatient {
   bool get hasVisioLink =>
       lienVisio != null && lienVisio!.trim().isNotEmpty;
 
-  bool get peutAnnuler => statut == 'planifie' || statut == 'confirme';
+  bool get isPendingValidation =>
+      statut == 'en_attente' || statut == 'planifie';
+
+  bool get peutAnnuler =>
+      statut == 'en_attente' || statut == 'planifie' || statut == 'confirme';
+
+  bool get canJoinVisio => statut == 'confirme' && hasVisioLink;
 
   String get statutLabel {
     switch (statut) {
+      case 'en_attente':
       case 'planifie':
-        return 'Planifié';
+        return 'En attente de validation';
       case 'confirme':
         return 'Validé';
       case 'annule':

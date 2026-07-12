@@ -1,13 +1,26 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
+import '../core/api_config.dart';
 import '../core/api_errors.dart';
+import '../core/api_session.dart';
 import '../core/pdf_download.dart';
 import '../models/patient_models.dart';
 import 'push_service.dart';
 
-const _staffRdvReadRoles = {'admin', 'medecin', 'infirmier', 'comptable'};
-const _staffRdvGestRoles = {'admin', 'medecin', 'infirmier'};
+const _staffRdvReadRoles = {
+  'admin',
+  'medecin',
+  'infirmier',
+  'comptable',
+  'secretaire',
+};
+const _staffRdvGestRoles = {
+  'admin',
+  'medecin',
+  'infirmier',
+  'secretaire',
+};
 
 enum LoginStatus { success, mfaRequired, failed }
 
@@ -43,8 +56,13 @@ class AuthService extends ChangeNotifier {
       return false;
     }
     _user = profile;
+    ApiSession.isPatient = profile.role == 'patient';
     if (profile.role == 'patient') {
-      await _push?.registerWithBackend();
+      try {
+        await _push?.registerWithBackend();
+      } catch (_) {
+        // L'enregistrement push ne doit pas bloquer la connexion patient.
+      }
     }
     return true;
   }
@@ -59,8 +77,11 @@ class AuthService extends ChangeNotifier {
         return false;
       }
       _user = profile;
+      ApiSession.isPatient = profile.role == 'patient';
       if (profile.role == 'patient') {
-        await _push?.registerWithBackend();
+        try {
+          await _push?.registerWithBackend();
+        } catch (_) {}
       }
       notifyListeners();
       return true;
@@ -76,6 +97,15 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      if (ApiConfig.isProductionDeployment) {
+        try {
+          await _api.warmUp();
+        } catch (e) {
+          _error = friendlyApiError(e);
+          return LoginStatus.failed;
+        }
+      }
+
       final response = await _api.post(
         '/auth/login/',
         {'username': username, 'password': password},
@@ -87,7 +117,12 @@ class AuthService extends ChangeNotifier {
         return LoginStatus.mfaRequired;
       }
 
-      final data = _api.decodeMap(response);
+      if (response.statusCode >= 400) {
+        _error = friendlyLoginError(response.statusCode, response.body);
+        return LoginStatus.failed;
+      }
+
+      final data = _api.decodeMap(response, notify: false);
       await _api.saveTokens(
         data['access_token'] as String,
         data['refresh_token'] as String,
@@ -103,7 +138,9 @@ class AuthService extends ChangeNotifier {
         _pendingMfaUsername = username.trim();
         return LoginStatus.mfaRequired;
       }
-      _error = friendlyApiError(e);
+      _error = e.statusCode == 401 || e.statusCode == 403
+          ? friendlyLoginError(e.statusCode ?? 0, e.message)
+          : friendlyApiError(e);
       return LoginStatus.failed;
     } finally {
       _loading = false;
@@ -176,6 +213,7 @@ class AuthService extends ChangeNotifier {
     await _push?.unregisterFromBackend();
     _user = null;
     _pendingMfaUsername = null;
+    ApiSession.isPatient = false;
     await _api.clearTokens();
     notifyListeners();
   }

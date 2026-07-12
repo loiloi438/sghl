@@ -204,7 +204,9 @@ def stats_rendez_vous(request):
         rdv_planifies=upcoming.filter(
             statut__in={StatutRendezVous.PLANIFIE, StatutRendezVous.CONFIRME},
         ).count(),
-        rdv_en_attente=upcoming.filter(statut=StatutRendezVous.PLANIFIE).count(),
+        rdv_en_attente=upcoming.filter(
+            statut__in=[StatutRendezVous.EN_ATTENTE, StatutRendezVous.PLANIFIE],
+        ).count(),
         rdv_valides=upcoming.filter(statut=StatutRendezVous.CONFIRME).count(),
         rdv_annules=RendezVous.objects.filter(statut=StatutRendezVous.ANNULE).count(),
     )

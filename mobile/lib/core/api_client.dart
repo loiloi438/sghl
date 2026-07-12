@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
 import 'api_errors.dart';
+import 'api_session.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
@@ -24,10 +25,17 @@ class ApiClient {
   final FlutterSecureStorage _storage;
   static const _accessKey = 'sghl_access_token';
   static const _refreshKey = 'sghl_refresh_token';
-  static const _requestTimeout = Duration(seconds: 45);
+  static const _requestTimeout = Duration(seconds: 60);
+  static const _networkRetryDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 4),
+    Duration(seconds: 6),
+  ];
 
   Future<Map<String, String>> _headers({bool auth = true, bool binary = false}) async {
-    final headers = <String, String>{};
+    final headers = <String, String>{
+      'Accept': 'application/json',
+    };
     if (!binary) {
       headers['Content-Type'] = 'application/json';
     }
@@ -48,9 +56,34 @@ class ApiClient {
     return _request('POST', path, auth: auth, body: body);
   }
 
+  /// Réveille l'API Render (cold start) avant une connexion.
+  Future<void> warmUp({int attempts = 3}) async {
+    Object? lastError;
+    for (var i = 0; i < attempts; i++) {
+      try {
+        final response = await http
+            .get(
+              Uri.parse('${ApiConfig.baseUrl}/sante/'),
+              headers: const {'Accept': 'application/json'},
+            )
+            .timeout(_requestTimeout);
+        if (response.statusCode < 500) return;
+      } catch (e) {
+        lastError = e;
+      }
+      if (i < attempts - 1) {
+        await Future<void>.delayed(_networkRetryDelays[i]);
+      }
+    }
+    if (lastError != null && isNetworkError(lastError)) {
+      throw ApiException(friendlyNetworkError(serverWaking: true));
+    }
+  }
+
   Future<List<int>> downloadBytes(String path, {bool auth = true}) async {
     final response = await _request('GET', path, auth: auth, binary: true);
     if (response.statusCode >= 400) {
+      await _notifyHttpError(response.statusCode);
       throw ApiException(
         friendlyHttpError(response.statusCode, response.body),
         statusCode: response.statusCode,
@@ -80,45 +113,71 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool binary = false,
   }) async {
+    Object? lastError;
+    for (var attempt = 0; attempt <= _networkRetryDelays.length; attempt++) {
+      try {
+        return await _performRequest(
+          method,
+          path,
+          auth: auth,
+          body: body,
+          binary: binary,
+        );
+      } on ApiException catch (e) {
+        rethrow;
+      } on TimeoutException catch (e) {
+        lastError = e;
+      } on http.ClientException catch (e) {
+        lastError = e;
+      } catch (e) {
+        if (isNetworkError(e)) {
+          lastError = e;
+        } else {
+          rethrow;
+        }
+      }
+
+      if (attempt < _networkRetryDelays.length) {
+        await Future<void>.delayed(_networkRetryDelays[attempt]);
+        continue;
+      }
+    }
+
+    throw ApiException(
+      friendlyNetworkError(serverWaking: ApiConfig.isProductionDeployment),
+    );
+  }
+
+  Future<http.Response> _performRequest(
+    String method,
+    String path, {
+    required bool auth,
+    Map<String, dynamic>? body,
+    bool binary = false,
+  }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}$path');
     final headers = await _headers(auth: auth, binary: binary);
 
     http.Response response;
-    try {
-      if (method == 'GET') {
-        response = await http.get(uri, headers: headers).timeout(_requestTimeout);
-      } else {
-        response = await http
-            .post(uri, headers: headers, body: jsonEncode(body))
-            .timeout(_requestTimeout);
-      }
-    } on TimeoutException {
-      throw ApiException(friendlyNetworkError());
-    } on http.ClientException {
-      throw ApiException(friendlyNetworkError());
-    } catch (e) {
-      if (isNetworkError(e)) {
-        throw ApiException(friendlyNetworkError());
-      }
-      rethrow;
+    if (method == 'GET') {
+      response = await http.get(uri, headers: headers).timeout(_requestTimeout);
+    } else {
+      response = await http
+          .post(uri, headers: headers, body: jsonEncode(body))
+          .timeout(_requestTimeout);
     }
 
     if (response.statusCode == 401 && auth) {
       final refreshed = await _refreshAccessToken();
       if (refreshed) {
         final retryHeaders = await _headers(auth: true, binary: binary);
-        try {
-          if (method == 'GET') {
-            response = await http.get(uri, headers: retryHeaders).timeout(_requestTimeout);
-          } else {
-            response = await http
-                .post(uri, headers: retryHeaders, body: jsonEncode(body))
-                .timeout(_requestTimeout);
-          }
-        } on TimeoutException {
-          throw ApiException(friendlyNetworkError());
-        } on http.ClientException {
-          throw ApiException(friendlyNetworkError());
+        if (method == 'GET') {
+          response =
+              await http.get(uri, headers: retryHeaders).timeout(_requestTimeout);
+        } else {
+          response = await http
+              .post(uri, headers: retryHeaders, body: jsonEncode(body))
+              .timeout(_requestTimeout);
         }
       }
     }
@@ -134,7 +193,10 @@ class ApiClient {
       final response = await http
           .post(
             Uri.parse('${ApiConfig.baseUrl}/auth/refresh/'),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
             body: jsonEncode({'refresh_token': refresh}),
           )
           .timeout(_requestTimeout);
@@ -145,7 +207,10 @@ class ApiClient {
       }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      await saveTokens(data['access_token'] as String, data['refresh_token'] as String);
+      await saveTokens(
+        data['access_token'] as String,
+        data['refresh_token'] as String,
+      );
       return true;
     } on TimeoutException {
       await clearTokens();
@@ -153,8 +218,11 @@ class ApiClient {
     }
   }
 
-  Map<String, dynamic> decodeMap(http.Response response) {
+  Map<String, dynamic> decodeMap(http.Response response, {bool notify = true}) {
     if (response.statusCode >= 400) {
+      if (notify) {
+        _notifyHttpError(response.statusCode);
+      }
       throw ApiException(
         friendlyHttpError(response.statusCode, response.body),
         statusCode: response.statusCode,
@@ -163,8 +231,11 @@ class ApiClient {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  List<dynamic> decodeList(http.Response response) {
+  List<dynamic> decodeList(http.Response response, {bool notify = true}) {
     if (response.statusCode >= 400) {
+      if (notify) {
+        _notifyHttpError(response.statusCode);
+      }
       throw ApiException(
         friendlyHttpError(response.statusCode, response.body),
         statusCode: response.statusCode,
@@ -179,8 +250,11 @@ class ApiClient {
     return const [];
   }
 
-  List<dynamic> decodeJsonList(http.Response response) {
+  List<dynamic> decodeJsonList(http.Response response, {bool notify = true}) {
     if (response.statusCode >= 400) {
+      if (notify) {
+        _notifyHttpError(response.statusCode);
+      }
       throw ApiException(
         friendlyHttpError(response.statusCode, response.body),
         statusCode: response.statusCode,
@@ -191,5 +265,19 @@ class ApiClient {
       return decoded;
     }
     return const [];
+  }
+
+  Future<void> _notifyHttpError(int statusCode) async {
+    if (statusCode == 401) {
+      if (await hasSession()) {
+        ApiSession.onSessionExpired?.call();
+      }
+      return;
+    }
+    if (statusCode == 403) {
+      ApiSession.onForbidden?.call(
+        friendlyHttpError(statusCode, '', isPatient: ApiSession.isPatient),
+      );
+    }
   }
 }

@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: SghlHumanCareBackground(
         child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SghlHumanCareHeartLoader()
           : _error != null
 
               ? Padding(
@@ -273,7 +273,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     label: 'Rendez-vous',
                                     detail: _dashboard!.prochainsRdv.isEmpty
                                         ? 'Planifiez une visite'
-                                        : _formatDate(_dashboard!.prochainsRdv.first.dateHeure),
+                                        : _dashboard!.prochainsRdv.first.isPendingValidation
+                                            ? 'En attente de validation 💙'
+                                            : _formatDate(
+                                                _dashboard!
+                                                    .prochainsRdv.first.dateHeure,
+                                              ),
                                     icon: Icons.calendar_month_outlined,
                                     backgroundColor: const Color(0xFFECFDF5),
                                     borderColor: const Color(0xFFA7F3D0),

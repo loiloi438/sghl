@@ -279,3 +279,67 @@ class SghlHumanCareBackground extends StatelessWidget {
     );
   }
 }
+
+/// Loader Human-Care (cœur qui bat) pendant les appels API.
+class SghlHumanCareHeartLoader extends StatefulWidget {
+  const SghlHumanCareHeartLoader({
+    super.key,
+    this.message = 'Un instant…',
+  });
+
+  final String message;
+
+  @override
+  State<SghlHumanCareHeartLoader> createState() =>
+      _SghlHumanCareHeartLoaderState();
+}
+
+class _SghlHumanCareHeartLoaderState extends State<SghlHumanCareHeartLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 0.88, end: 1.12).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ScaleTransition(
+            scale: _scale,
+            child: const Text(
+              '💙',
+              style: TextStyle(fontSize: 44),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: SghlColors.humanCareTeal,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}

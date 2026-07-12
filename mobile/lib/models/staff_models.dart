@@ -72,10 +72,13 @@ class RendezVousStaff {
   final String notes;
   final int version;
 
-  bool get peutGerer => statut == 'planifie' || statut == 'confirme';
+  bool get peutGerer =>
+      statut == 'en_attente' || statut == 'planifie' || statut == 'confirme';
 
   String get statutLabel {
     switch (statut) {
+      case 'en_attente':
+        return 'En attente';
       case 'planifie':
         return 'Planifié';
       case 'confirme':

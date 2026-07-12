@@ -362,7 +362,13 @@ def tableau_de_bord(request):
     if hospitalisation:
         message = 'Nous veillons sur vous avec attention 💙'
     elif prochains_rdv:
-        message = 'Votre prochain rendez-vous est planifié — vous êtes entre de bonnes mains 💙'
+        pending = any(
+            r.statut in {'en_attente', 'planifie'} for r in prochains_rdv
+        )
+        if pending:
+            message = 'Votre demande de rendez-vous est en attente de validation 💙'
+        else:
+            message = 'Votre prochain rendez-vous est confirmé — vous êtes entre de bonnes mains 💙'
     else:
         message = 'Vous êtes en bonne santé 💙 — prenez soin de vous au quotidien.'
 

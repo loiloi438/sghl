@@ -8,6 +8,7 @@ from patients.models import Patient
 
 
 class StatutRendezVous(models.TextChoices):
+    EN_ATTENTE = 'en_attente', 'En attente de validation'
     PLANIFIE = 'planifie', 'Planifié'
     CONFIRME = 'confirme', 'Confirmé'
     ANNULE = 'annule', 'Annulé'
@@ -86,4 +87,8 @@ class RendezVous(TimeStampedModel, OptimisticLockModel):
 
     @property
     def est_modifiable(self) -> bool:
-        return self.statut in {StatutRendezVous.PLANIFIE, StatutRendezVous.CONFIRME}
+        return self.statut in {
+            StatutRendezVous.EN_ATTENTE,
+            StatutRendezVous.PLANIFIE,
+            StatutRendezVous.CONFIRME,
+        }

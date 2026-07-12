@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'core/api_session.dart';
+import 'core/role_guard.dart';
+import 'core/api_client.dart';
 import 'core/sghl_page_route.dart';
 import 'core/sghl_theme.dart';
 import 'core/theme_notifier.dart';
@@ -43,21 +46,23 @@ class SghlApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeNotifier = context.watch<ThemeNotifier>();
 
-    return MaterialApp(
-      title: 'SGHL Mobile',
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('fr', 'FR'),
-      supportedLocales: const [Locale('fr', 'FR')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      theme: SghlTheme.light(),
-      darkTheme: SghlTheme.dark(),
-      themeMode: themeNotifier.mode,
-      home: const _RootScreen(),
-      onGenerateRoute: _onGenerateRoute,
+    return _ApiSessionScope(
+      child: MaterialApp(
+        title: 'SGHL Mobile',
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('fr', 'FR'),
+        supportedLocales: const [Locale('fr', 'FR')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: SghlTheme.light(),
+        darkTheme: SghlTheme.dark(),
+        themeMode: themeNotifier.mode,
+        home: const _RootScreen(),
+        onGenerateRoute: _onGenerateRoute,
+      ),
     );
   }
 
@@ -86,8 +91,8 @@ class SghlApp extends StatelessWidget {
     return page;
   }
 
-  static Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
-    final Widget page = switch (settings.name) {
+  static Widget _buildPage(String? routeName, RouteSettings settings) {
+    return switch (routeName) {
       LoginScreen.route => const LoginScreen(),
       RegisterScreen.route => const RegisterScreen(),
       ValidateAccountScreen.route => ValidateAccountScreen(
@@ -111,20 +116,112 @@ class SghlApp extends StatelessWidget {
       ProfilScreen.route => const ProfilScreen(),
       StaffHomeScreen.route => const StaffHomeScreen(),
       StaffRendezVousScreen.route => const StaffRendezVousScreen(),
-      _ => throw Exception('Route inconnue: ${settings.name}'),
+      _ => throw Exception('Route inconnue: $routeName'),
     };
+  }
 
-    final themedPage = _withPatientTheme(settings.name, page);
+  static Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    Widget buildGuardedPage(BuildContext context) {
+      final auth = context.read<AuthService>();
+      final guard = RoleGuard.resolve(
+        requestedRoute: settings.name,
+        auth: auth,
+      );
+
+      if (guard.route != settings.name && guard.message != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(guard.message!)),
+          );
+        });
+      }
+
+      final page = _buildPage(guard.route, settings);
+      return _withPatientTheme(guard.route, page);
+    }
 
     if (_instantRoutes.contains(settings.name)) {
       return MaterialPageRoute<void>(
-        builder: (_) => themedPage,
+        builder: buildGuardedPage,
         settings: settings,
       );
     }
 
-    return SghlSlideUpRoute<void>(page: themedPage, settings: settings);
+    return SghlSlideUpRoute<void>(
+      page: Builder(builder: buildGuardedPage),
+      settings: settings,
+    );
   }
+}
+
+/// Branche les callbacks 401/403 et synchronise le rôle patient.
+class _ApiSessionScope extends StatefulWidget {
+  const _ApiSessionScope({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ApiSessionScope> createState() => _ApiSessionScopeState();
+}
+
+class _ApiSessionScopeState extends State<_ApiSessionScope> {
+  bool _handlingSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthService>();
+    _syncRole(auth);
+    auth.addListener(_onAuthChanged);
+    ApiSession.onSessionExpired = _onSessionExpired;
+    ApiSession.onForbidden = _onForbidden;
+  }
+
+  @override
+  void dispose() {
+    context.read<AuthService>().removeListener(_onAuthChanged);
+    ApiSession.reset();
+    super.dispose();
+  }
+
+  void _onAuthChanged() => _syncRole(context.read<AuthService>());
+
+  void _syncRole(AuthService auth) {
+    ApiSession.isPatient = auth.isPatient;
+  }
+
+  Future<void> _onSessionExpired() async {
+    if (_handlingSession || !mounted) return;
+    _handlingSession = true;
+    try {
+      await context.read<AuthService>().logout();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        LoginScreen.route,
+        (_) => false,
+      );
+    } finally {
+      _handlingSession = false;
+    }
+  }
+
+  void _onForbidden(String message) {
+    if (!mounted || !ApiSession.isPatient) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        PatientShell.route,
+        (_) => false,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _RootScreen extends StatefulWidget {
@@ -144,7 +241,15 @@ class _RootScreenState extends State<_RootScreen> {
   Future<void> _bootstrap() async {
     final themeNotifier = context.read<ThemeNotifier>();
     final auth = context.read<AuthService>();
+    final api = context.read<ApiClient>();
     await themeNotifier.load();
+
+    if (ApiConfig.isProductionDeployment) {
+      try {
+        await api.warmUp();
+      } catch (_) {}
+    }
+
     var ok = false;
     try {
       ok = await auth.tryRestoreSession().timeout(const Duration(seconds: 15));

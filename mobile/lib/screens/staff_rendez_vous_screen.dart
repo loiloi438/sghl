@@ -125,6 +125,8 @@ class _StaffRendezVousScreenState extends State<StaffRendezVousScreen> {
 
   Color? _statutColor(String statut, BuildContext context) {
     switch (statut) {
+      case 'en_attente':
+        return Colors.orange.shade800;
       case 'confirme':
         return Theme.of(context).colorScheme.primary;
       case 'planifie':
@@ -196,6 +198,7 @@ class _StaffRendezVousScreenState extends State<StaffRendezVousScreen> {
                     ),
                     items: const [
                       DropdownMenuItem(value: '', child: Text('Tous')),
+                      DropdownMenuItem(value: 'en_attente', child: Text('En attente')),
                       DropdownMenuItem(value: 'planifie', child: Text('Planifié')),
                       DropdownMenuItem(value: 'confirme', child: Text('Confirmé')),
                       DropdownMenuItem(value: 'termine', child: Text('Terminé')),

@@ -292,7 +292,7 @@ class _StaffRdvManageSheetState extends State<StaffRdvManageSheet> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          if (_rdv.statut == 'planifie')
+                          if (_rdv.statut == 'en_attente' || _rdv.statut == 'planifie')
                             FilledButton(
                               onPressed: _busy ? null : () => _runAction('confirmer'),
                               child: const Text('Confirmer'),
@@ -302,7 +302,9 @@ class _StaffRdvManageSheetState extends State<StaffRdvManageSheet> {
                               onPressed: _busy ? null : () => _runAction('terminer'),
                               child: const Text('Terminer'),
                             ),
-                          if (_rdv.statut == 'planifie' || _rdv.statut == 'confirme')
+                          if (_rdv.statut == 'en_attente' ||
+                              _rdv.statut == 'planifie' ||
+                              _rdv.statut == 'confirme')
                             OutlinedButton(
                               onPressed: _busy ? null : () => _runAction('absent'),
                               child: const Text('Absent'),

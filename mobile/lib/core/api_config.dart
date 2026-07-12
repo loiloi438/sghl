@@ -24,7 +24,7 @@ class ApiConfig {
     _savedOverride = await ApiSettings.load();
 
     if (kIsWeb && !web_host.isLocalWebHost) {
-      if (_savedOverride != null && _isLocalUrl(_savedOverride!)) {
+      if (_savedOverride != null) {
         _savedOverride = null;
         await ApiSettings.clear();
       }
@@ -60,9 +60,6 @@ class ApiConfig {
     }
 
     if (kIsWeb && !web_host.isLocalWebHost) {
-      if (_webConfiguredUrl != null && _webConfiguredUrl!.isNotEmpty) {
-        return _webConfiguredUrl!;
-      }
       return productionApiUrl;
     }
 
