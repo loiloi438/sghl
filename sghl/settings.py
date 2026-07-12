@@ -168,6 +168,14 @@ if _cors_origins:
 elif not DEBUG:
     CORS_ALLOWED_ORIGINS = []
 
+# Frontends Render (staff, patient, previews) — évite les blocages CORS navigateur.
+if not DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r'^https://[\w-]+\.onrender\.com$',
+    ]
+else:
+    CORS_ALLOWED_ORIGIN_REGEXES = []
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -288,8 +296,10 @@ def _assert_production_security():
     if not ALLOWED_HOSTS:
         errors.append('ALLOWED_HOSTS ne peut pas être vide lorsque DEBUG=False.')
 
-    if not _cors_origins.strip():
-        errors.append('CORS_ALLOWED_ORIGINS doit être renseigné lorsque DEBUG=False.')
+    if not _cors_origins.strip() and not CORS_ALLOWED_ORIGIN_REGEXES:
+        errors.append(
+            'CORS_ALLOWED_ORIGINS ou CORS_ALLOWED_ORIGIN_REGEXES doit être renseigné lorsque DEBUG=False.'
+        )
 
     if errors:
         raise ImproperlyConfigured('Configuration production invalide:\n- ' + '\n- '.join(errors))
