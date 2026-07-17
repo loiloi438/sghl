@@ -48,13 +48,13 @@
             |
             <span :class="{ 'is-active': locale === 'en' }">EN</span>
           </button>
-          <RouterLink class="btn-public-primary" :to="{ name: 'login' }">{{ t('nav.login') }}</RouterLink>
           <RouterLink
             class="btn-public-secondary"
             :to="{ name: 'login', query: { mode: 'register' } }"
           >
             {{ t('nav.register') }}
           </RouterLink>
+          <RouterLink class="btn-public-primary" :to="{ name: 'login' }">{{ t('nav.login') }}</RouterLink>
         </div>
       </div>
     </header>
@@ -70,25 +70,41 @@
     <footer class="public-footer">
       <div class="public-footer-inner">
         <div class="public-footer-grid">
+          <div class="public-footer-brand">
+            <RouterLink to="/accueil" class="public-brand public-brand--footer">
+              <span class="public-brand-icon" aria-hidden="true">+</span>
+              <span>
+                <strong>SGHL</strong>
+                <small>Centre Hospitalier · Nkayi</small>
+              </span>
+            </RouterLink>
+            <p>Des soins humains, accessibles et sécurisés pour toute la famille.</p>
+          </div>
           <div>
-            <strong>{{ t('footer.contact') }}</strong>
-            <p>📞 01 23 45 67 89</p>
-            <p><a href="mailto:info@sghl-sante.com">info@sghl-sante.com</a></p>
+            <strong>Coordonnées</strong>
+            <p>📍 Nkayi, Rue Houmba Makosso, N°36</p>
+            <p>📞 <a href="tel:+242061234567">+242 06 123 45 67</a></p>
+            <p>✉️ <a href="mailto:contact@sghl-nkayi.cg">contact@sghl-nkayi.cg</a></p>
+          </div>
+          <div>
+            <strong>Navigation</strong>
+            <p><RouterLink to="/a-propos">{{ t('footer.about') }}</RouterLink></p>
+            <p><RouterLink to="/nos-services">{{ t('nav.services') }}</RouterLink></p>
+            <p><RouterLink to="/presentation">Notre établissement</RouterLink></p>
             <p><RouterLink to="/contact">{{ t('nav.contact') }}</RouterLink></p>
           </div>
           <div>
-            <strong>{{ t('footer.links') }}</strong>
-            <p><RouterLink to="/a-propos">{{ t('footer.about') }}</RouterLink></p>
-            <p><RouterLink to="/nos-services">{{ t('nav.services') }}</RouterLink></p>
+            <strong>Informations</strong>
+            <p><RouterLink to="/mentions-legales">{{ t('footer.legal') }}</RouterLink></p>
+            <p><RouterLink to="/confidentialite">{{ t('footer.privacy') }}</RouterLink></p>
             <p><RouterLink to="/securite">{{ t('nav.security') }}</RouterLink></p>
-            <p><RouterLink to="/blog">{{ t('nav.blog') }}</RouterLink></p>
             <p><RouterLink to="/faq">{{ t('nav.faq') }}</RouterLink></p>
           </div>
           <div>
-            <strong>{{ t('footer.support') }}</strong>
-            <p><RouterLink to="/mentions-legales">{{ t('footer.legal') }}</RouterLink></p>
-            <p><RouterLink to="/confidentialite">{{ t('footer.privacy') }}</RouterLink></p>
-            <p><RouterLink to="/login">{{ t('nav.login') }}</RouterLink></p>
+            <strong>Horaires</strong>
+            <p>Urgences : 24h/24 · 7j/7</p>
+            <p>Consultations :<br />Lun–Ven · 07h00–18h00</p>
+            <p>Samedi · 07h00–13h00</p>
           </div>
         </div>
         <p class="public-footer-copy">
@@ -111,12 +127,9 @@ const { t, locale, toggleLocale } = useI18n()
 
 const navLinks = computed(() => [
   { to: '/accueil', labelKey: 'nav.home' },
-  { to: '/a-propos', labelKey: 'nav.about' },
   { to: '/presentation', labelKey: 'nav.presentation' },
   { to: '/nos-services', labelKey: 'nav.services' },
-  { to: '/securite', labelKey: 'nav.security' },
-  { to: '/faq', labelKey: 'nav.faq' },
-  { to: '/blog', labelKey: 'nav.blog' },
+  { to: '/a-propos', labelKey: 'nav.about' },
   { to: '/contact', labelKey: 'nav.contact' },
 ])
 

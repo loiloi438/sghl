@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/sghl_theme.dart';
 import '../widgets/sghl_design_system.dart';
 import 'home_screen.dart';
-import 'messagerie_screen.dart';
-import 'notifications_screen.dart';
+import 'prescriptions_screen.dart';
 import 'profil_screen.dart';
 import 'rendez_vous_screen.dart';
 
@@ -24,30 +23,29 @@ class _PatientShellState extends State<PatientShell> {
     SghlNavItem(
       icon: Icons.home_outlined,
       selectedIcon: Icons.home_rounded,
+      label: 'Accueil',
     ),
     SghlNavItem(
-      icon: Icons.folder_outlined,
-      selectedIcon: Icons.folder_rounded,
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month_rounded,
+      label: 'Rendez-vous',
     ),
     SghlNavItem(
-      icon: Icons.chat_bubble_outline_rounded,
-      selectedIcon: Icons.chat_bubble_rounded,
-    ),
-    SghlNavItem(
-      icon: Icons.notifications_none_rounded,
-      selectedIcon: Icons.notifications_rounded,
+      icon: Icons.medication_outlined,
+      selectedIcon: Icons.medication_rounded,
+      label: 'Ordonnances',
     ),
     SghlNavItem(
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
+      label: 'Mon profil',
     ),
   ];
 
   static const _pages = [
     HomeScreen(embedded: true),
     RendezVousScreen(embedded: true),
-    MessagerieScreen(embedded: true),
-    NotificationsScreen(embedded: true),
+    PrescriptionsScreen(),
     ProfilScreen(embedded: true),
   ];
 
@@ -59,32 +57,12 @@ class _PatientShellState extends State<PatientShell> {
         body: Stack(
           children: [
             Positioned.fill(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 320),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.03),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
-                  );
-                },
-                child: KeyedSubtree(
-                  key: ValueKey<int>(_index),
-                  child: _pages[_index],
-                ),
-              ),
+              child: IndexedStack(index: _index, children: _pages),
             ),
             Positioned(
               left: 0,
               right: 0,
-              bottom: 12,
+              bottom: 0,
               child: SafeArea(
                 top: false,
                 child: SghlFloatingNavBar(
@@ -92,6 +70,7 @@ class _PatientShellState extends State<PatientShell> {
                   selectedIndex: _index,
                   onSelected: (i) => setState(() => _index = i),
                   lightBar: true,
+                  compact: false,
                 ),
               ),
             ),

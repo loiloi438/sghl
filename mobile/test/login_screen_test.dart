@@ -20,12 +20,12 @@ void main() {
           ChangeNotifierProvider<AuthService>.value(value: auth),
           ChangeNotifierProvider<ThemeNotifier>.value(value: themeNotifier),
         ],
-        child: MaterialApp(
-          theme: SghlTheme.light(),
-          home: const LoginScreen(),
-        ),
+        child: MaterialApp(theme: SghlTheme.light(), home: const LoginScreen()),
       ),
     );
+
+    await tester.tap(find.text('Se connecter'));
+    await tester.pumpAndSettle();
 
     final passwordField = find.byType(TextFormField).last;
     expect(passwordField, findsOneWidget);
@@ -36,6 +36,8 @@ void main() {
     final toggle = find.byIcon(Icons.visibility_outlined);
     expect(toggle, findsOneWidget);
 
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
     await tester.tap(toggle);
     await tester.pump();
 
