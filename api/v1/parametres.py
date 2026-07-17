@@ -111,6 +111,45 @@ def get_parametres_public(request):
     )
 
 
+class ContactPublicIn(Schema):
+    nom: str
+    email: str
+    message: str
+
+
+@router.post('/contact/')
+def contact_public(request, payload: ContactPublicIn):
+    """Formulaire de contact public (mode observateur)."""
+    nom = (payload.nom or '').strip()
+    email = (payload.email or '').strip()
+    message = (payload.message or '').strip()
+    if len(nom) < 2:
+        raise HttpError(400, 'Indiquez votre nom.')
+    if '@' not in email or len(email) < 5:
+        raise HttpError(400, 'Adresse e-mail invalide.')
+    if len(message) < 10:
+        raise HttpError(400, 'Votre message est trop court.')
+    if len(message) > 2000:
+        raise HttpError(400, 'Votre message est trop long.')
+
+    dest = _contact_email(ConfigurationEtablissement.get_solo())
+    subject = f'[SGHL Contact] Message de {nom}'
+    body = f'De : {nom} <{email}>\n\n{message}\n'
+    try:
+        from django.core.mail import send_mail
+
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+            recipient_list=[dest],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
+    return {'ok': True, 'detail': 'Message reçu.'}
+
+
 @router.get('/parametres/', response=ParametresOut, auth=jwt_auth)
 def get_parametres(request):
     _check_admin(request.auth)

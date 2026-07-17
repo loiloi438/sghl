@@ -59,6 +59,16 @@
             <ThemeToggle />
           </div>
 
+          <div class="mt-4">
+            <RouterLink to="/accueil" class="text-sm font-semibold text-teal-700 underline decoration-teal-200 hover:text-teal-900">
+              ← Retour à l’accueil
+            </RouterLink>
+          </div>
+
+          <div v-if="showPersonalGate" class="login-empathy-banner">
+            Pour continuer et accéder à vos informations personnelles, veuillez vous connecter 💙
+          </div>
+
           <div class="mt-6 rounded-3xl bg-slate-50 p-4 text-sm text-slate-700">
             <span class="inline-flex items-center justify-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Sécurité</span>
             <p class="mt-3 leading-6 text-slate-600">Vos données sont protégées — connexion chiffrée et conforme RGPD.</p>
@@ -340,6 +350,8 @@ const panelSubtitle = computed(() => {
   return 'Espace patient ou personnel hospitalier'
 })
 
+const showPersonalGate = computed(() => route.query.reason === 'personal')
+
 function switchMode(next) {
   mode.value = next
   if (next === 'register') {
@@ -371,7 +383,17 @@ function parseResetQuery() {
   mode.value = 'reset'
 }
 
-onMounted(parseResetQuery)
+function applyQueryMode() {
+  if (route.query.mode === 'register') {
+    switchMode('register')
+  }
+}
+
+onMounted(() => {
+  parseResetQuery()
+  applyQueryMode()
+  setPortalTheme('patient')
+})
 
 async function submitLogin() {
   const res = await auth.login(username.value, password.value)

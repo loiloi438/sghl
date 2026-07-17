@@ -19,6 +19,15 @@ Ouvrir [http://localhost:5173](http://localhost:5173).
 
 Le proxy Vite redirige `/api` vers le backend Django.
 
+## Mode observateur (visiteur)
+
+Sans connexion, l’entrée publique est **`/accueil`** (un visiteur sur `/` y est redirigé) :
+
+- Présentation, services, sécurité / RGPD, FAQ, témoignages, blog conseils santé, contact
+- Pages **À propos**, **Mentions légales**, **Confidentialité**
+- Boutons **Se connecter** et **Créer un compte gratuit** (+ bascule **FR | EN**)
+- Toute action personnelle (RDV, factures, ordonnances…) renvoie vers `/login` avec un message empathique
+
 ## Comptes de démonstration
 
 ### Personnel (MFA par e-mail à la connexion)

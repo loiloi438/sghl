@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
 
 async function logout() {
   await auth.logout()
-  router.push({ name: 'login' })
+  router.push({ name: 'accueil' })
 }
 </script>
 

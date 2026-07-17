@@ -6,6 +6,7 @@ import './index.css'
 import './assets/main.css'
 import './assets/themes.css'
 import './assets/human-care-patient.css'
+import './assets/human-care-public.css'
 import { initTheme, setPortalTheme } from './composables/useTheme.js'
 
 initTheme()

@@ -38,15 +38,32 @@
           </RouterLink>
         </nav>
         <div class="patient-header-actions">
+          <RouterLink to="/patient/messages" class="btn btn-secondary btn-sm">Messages</RouterLink>
+          <RouterLink to="/patient/notifications" class="btn btn-secondary btn-sm">
+            Notifications
+            <span v-if="unreadCount > 0" class="nav-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+          </RouterLink>
           <RouterLink to="/contact" class="btn btn-secondary btn-sm">Contact</RouterLink>
           <ThemeToggle />
-          <span v-if="auth.user" class="user-name">{{ auth.fullName }}</span>
+          <RouterLink to="/patient/profil" class="patient-avatar-link" :title="auth.fullName || 'Profil'">
+            <img
+              class="patient-avatar"
+              src="/images/visitor/equipe.jpg"
+              alt="Profil"
+              width="36"
+              height="36"
+            />
+          </RouterLink>
           <button type="button" class="btn btn-secondary btn-sm" @click="logout">Déconnexion</button>
         </div>
       </div>
     </header>
     <main class="patient-main">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </main>
   </div>
 </template>
@@ -88,7 +105,7 @@ function onNotificationsUpdated(event) {
 
 async function logout() {
   await auth.logout()
-  router.push({ name: 'login' })
+  router.push({ name: 'accueil' })
 }
 
 onMounted(() => {
@@ -246,11 +263,37 @@ onUnmounted(() => {
   color: var(--color-muted);
 }
 
+.patient-avatar-link {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 2px solid #99f6e4;
+  line-height: 0;
+}
+
+.patient-avatar {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  display: block;
+}
+
 .patient-main {
   flex: 1;
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 </style>

@@ -66,6 +66,10 @@
       </section>
 
       <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+        <ContactForm />
+      </section>
+
+      <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <div class="overflow-hidden rounded-[28px] border border-slate-200">
           <div ref="mapContainer" class="h-[420px] w-full" aria-label="Carte localisation SGHL" />
         </div>
@@ -115,6 +119,7 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import 'leaflet/dist/leaflet.css'
 
 import api, { getErrorMessage } from '../api/client.js'
+import ContactForm from '../components/public/ContactForm.vue'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({

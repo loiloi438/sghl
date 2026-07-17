@@ -32,8 +32,16 @@ import { useAuthStore } from '../stores/auth.js'
 import { showAccessDenied } from '../composables/useToast.js'
 import { setPortalTheme } from '../composables/useTheme.js'
 
+const publicMeta = { public: true, visitor: true }
+
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to) {
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth', top: 80 }
+    }
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/login',
@@ -48,16 +56,159 @@ const router = createRouter({
       meta: { public: true, title: 'Validation du compte' },
     },
     {
-      path: '/contact',
-      name: 'contact',
-      component: () => import('../views/LocalisationView.vue'),
-      meta: { public: true, title: 'Contact & Localisation' },
-    },
-    {
       path: '/visio/:token',
       name: 'visio',
       component: () => import('../views/VisioView.vue'),
       meta: { public: true, title: 'Téléconsultation' },
+    },
+    {
+      path: '/accueil',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Accueil' },
+      children: [
+        {
+          path: '',
+          name: 'accueil',
+          component: () => import('../views/public/LandingView.vue'),
+          meta: { ...publicMeta, title: 'Accueil' },
+        },
+      ],
+    },
+    {
+      path: '/presentation',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Présentation' },
+      children: [
+        {
+          path: '',
+          name: 'presentation',
+          component: () => import('../views/public/PresentationView.vue'),
+          meta: { ...publicMeta, title: 'Présentation' },
+        },
+      ],
+    },
+    {
+      path: '/a-propos',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'À propos' },
+      children: [
+        {
+          path: '',
+          name: 'a-propos',
+          component: () => import('../views/public/AProposView.vue'),
+          meta: { ...publicMeta, title: 'À propos' },
+        },
+      ],
+    },
+    {
+      path: '/mentions-legales',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Mentions légales' },
+      children: [
+        {
+          path: '',
+          name: 'mentions-legales',
+          component: () => import('../views/public/MentionsLegalesView.vue'),
+          meta: { ...publicMeta, title: 'Mentions légales' },
+        },
+      ],
+    },
+    {
+      path: '/confidentialite',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Confidentialité' },
+      children: [
+        {
+          path: '',
+          name: 'confidentialite',
+          component: () => import('../views/public/ConfidentialiteView.vue'),
+          meta: { ...publicMeta, title: 'Confidentialité' },
+        },
+      ],
+    },
+    {
+      path: '/nos-services',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Services' },
+      children: [
+        {
+          path: '',
+          name: 'nos-services',
+          component: () => import('../views/public/ServicesPublicView.vue'),
+          meta: { ...publicMeta, title: 'Services' },
+        },
+      ],
+    },
+    {
+      path: '/securite',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Sécurité' },
+      children: [
+        {
+          path: '',
+          name: 'securite',
+          component: () => import('../views/public/SecuriteView.vue'),
+          meta: { ...publicMeta, title: 'Sécurité' },
+        },
+      ],
+    },
+    {
+      path: '/faq',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'FAQ' },
+      children: [
+        {
+          path: '',
+          name: 'faq',
+          component: () => import('../views/public/FaqView.vue'),
+          meta: { ...publicMeta, title: 'FAQ' },
+        },
+      ],
+    },
+    {
+      path: '/temoignages',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Témoignages' },
+      children: [
+        {
+          path: '',
+          name: 'temoignages',
+          component: () => import('../views/public/TemoignagesView.vue'),
+          meta: { ...publicMeta, title: 'Témoignages' },
+        },
+      ],
+    },
+    {
+      path: '/blog',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Conseils santé' },
+      children: [
+        {
+          path: '',
+          name: 'blog',
+          component: () => import('../views/public/BlogIndexView.vue'),
+          meta: { ...publicMeta, title: 'Conseils santé' },
+        },
+        {
+          path: ':slug',
+          name: 'blog-post',
+          component: () => import('../views/public/BlogPostView.vue'),
+          meta: { ...publicMeta, title: 'Article' },
+        },
+      ],
+    },
+    {
+      path: '/contact',
+      component: () => import('../layouts/PublicLayout.vue'),
+      meta: { ...publicMeta, title: 'Contact & Localisation' },
+      children: [
+        {
+          path: '',
+          name: 'contact',
+          component: () => import('../views/LocalisationView.vue'),
+          meta: { ...publicMeta, title: 'Contact & Localisation' },
+        },
+      ],
     },
     {
       path: '/patient',
@@ -388,7 +539,13 @@ router.beforeEach(async (to) => {
 
   if (!auth.user && !to.meta.public) {
     const ok = await auth.restoreSession()
-    if (!ok && !to.meta.public) return { name: 'login', query: { redirect: to.fullPath } }
+    if (!ok) {
+      // Entrée site : visitors land on public home instead of raw login
+      if (to.name === 'dashboard' || to.path === '/') {
+        return { name: 'accueil' }
+      }
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
   }
 
   if (to.name === 'login' && auth.isAuthenticated) {
@@ -410,7 +567,13 @@ router.beforeEach(async (to) => {
     return { name: auth.homeRoute }
   }
 
-  if (to.meta.patientOnly || to.path.startsWith('/patient') || to.name === 'validate-account') {
+  if (
+    to.meta.visitor ||
+    to.meta.patientOnly ||
+    to.path.startsWith('/patient') ||
+    to.name === 'validate-account' ||
+    to.name === 'login'
+  ) {
     setPortalTheme('patient')
   } else if (to.meta.staffOnly || (auth.isStaff && !to.meta.public)) {
     setPortalTheme('staff')
