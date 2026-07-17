@@ -4,6 +4,7 @@ import {
   ASSURANCE,
   AUDIT,
   CAISSE_READ,
+  COMPTES,
   DOCUMENTS,
   FACTURATION_READ,
   FORMATION_RH,
@@ -287,6 +288,12 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('../views/DashboardView.vue'),
           meta: { title: 'Tableau de bord', roles: DASHBOARD },
+        },
+        {
+          path: 'comptes',
+          name: 'comptes',
+          component: () => import('../views/ComptesView.vue'),
+          meta: { title: 'Gestion des comptes', roles: COMPTES },
         },
         {
           path: 'profil',

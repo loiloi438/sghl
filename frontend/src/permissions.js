@@ -47,6 +47,7 @@ export const CAISSE_READ = ['admin', 'comptable', 'secretaire']
 
 export const DASHBOARD = STAFF_ROLES.filter((r) => r !== 'secretaire')
 export const AUDIT = ['admin']
+export const COMPTES = ['admin']
 export const STATISTIQUES = ['admin', 'comptable', 'medecin']
 export const ASSURANCE = ['admin', 'comptable']
 export const DOCUMENTS = ['admin', 'medecin', 'infirmier']

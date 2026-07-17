@@ -2,6 +2,7 @@ import {
   ASSURANCE,
   AUDIT,
   CAISSE_READ,
+  COMPTES,
   DASHBOARD,
   DOCUMENTS,
   FACTURATION_READ,
@@ -33,18 +34,25 @@ export const NAV_SECTIONS = [
     label: 'Accueil',
     items: [
       {
-        to: '/secretariat',
-        name: 'secretariat',
-        label: 'Secrétariat',
-        icon: 'calendar',
-        roles: ['admin', 'secretaire'],
-      },
-      {
         to: '/',
         name: 'dashboard',
         label: 'Tableau de bord',
         icon: 'dashboard',
         roles: DASHBOARD,
+      },
+      {
+        to: '/comptes',
+        name: 'comptes',
+        label: 'Gestion des comptes',
+        icon: 'patients',
+        roles: COMPTES,
+      },
+      {
+        to: '/secretariat',
+        name: 'secretariat',
+        label: 'Secrétariat',
+        icon: 'calendar',
+        roles: ['admin', 'secretaire'],
       },
       {
         to: '/profil',
@@ -62,7 +70,7 @@ export const NAV_SECTIONS = [
       { to: '/patients', name: 'patients', label: 'Patients', icon: 'patients', roles: PATIENTS_READ },
       { to: '/rendez-vous', name: 'rendez-vous', label: 'Rendez-vous', icon: 'calendar', roles: RDV_READ },
       { to: '/prescriptions', name: 'prescriptions', label: 'Prescriptions', icon: 'prescription', roles: PRESCRIPTIONS_READ },
-      { to: '/resultats-medicaux', name: 'resultats-medicaux', label: 'Résultats', icon: 'lab', roles: LABO_READ },
+      { to: '/resultats-medicaux', name: 'resultats-medicaux', label: 'Laboratoire', icon: 'lab', roles: LABO_READ },
     ],
   },
   {
@@ -79,8 +87,8 @@ export const NAV_SECTIONS = [
     label: 'Administration',
     items: [
       { to: '/caisse', name: 'caisse', label: 'Caisse & Secrétariat', icon: 'billing', roles: CAISSE_READ },
-      { to: '/facturation', name: 'facturation', label: 'Facturation', icon: 'billing', roles: FACTURATION_READ },
-      { to: '/statistiques', name: 'statistiques', label: 'Statistiques & Rapports', icon: 'dashboard', roles: STATISTIQUES },
+      { to: '/facturation', name: 'facturation', label: 'Factures & Paiements', icon: 'billing', roles: FACTURATION_READ },
+      { to: '/statistiques', name: 'statistiques', label: 'Statistiques', icon: 'dashboard', roles: STATISTIQUES },
       { to: '/assurance', name: 'assurance', label: 'Assurance & Mutuelles', icon: 'billing', roles: ASSURANCE },
       { to: '/audit', name: 'audit', label: "Journal d'audit", icon: 'dashboard', roles: AUDIT },
     ],

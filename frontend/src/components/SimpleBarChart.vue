@@ -4,8 +4,13 @@
       <div v-for="(point, index) in series" :key="index" class="chart-col">
         <div
           class="chart-bar"
-          :style="{ height: barHeight(point.value) }"
-          :title="`${point.label}: ${point.value}`"
+          :style="{
+            height: barHeight(point.value),
+            background: point.color
+              ? `linear-gradient(180deg, ${point.color} 0%, ${point.color}99 100%)`
+              : undefined,
+          }"
+          :title="`${point.label}: ${formatValue(point.value)}`"
         />
         <span class="chart-label">{{ point.label }}</span>
       </div>
@@ -29,6 +34,13 @@ const maxValue = computed(() => {
 function barHeight(value) {
   const pct = Math.round((value / maxValue.value) * 100)
   return `${Math.max(pct, 4)}%`
+}
+
+function formatValue(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return value
+  if (n >= 1000) return `${Math.round(n).toLocaleString('fr-FR')}`
+  return String(n)
 }
 </script>
 
