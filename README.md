@@ -1,6 +1,8 @@
 # SGHL — Système de gestion hospitalière
 
 ERP hospitalier (Django 5.2 + Ninja, Vue 3 staff, Flutter patient) pour la gestion des patients, rendez-vous, prescriptions, laboratoire, pharmacie, facturation et soins.
+<img width="595" height="2268" alt="image" src="https://github.com/user-attachments/assets/55acccb6-9b9f-445f-a55a-5dfd4a1f451e" />
+
 
 ## Prérequis
 
